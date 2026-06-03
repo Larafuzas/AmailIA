@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v4)</title>
+    <title>AmailIA - Optimización de Reparto (v4.1)</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -213,8 +213,6 @@
         let routeLinesGroup = null;
         let detailPortalsGroup = null;
         let isMapPickingModeActive = false;
-        
-        // Temporizador para evitar saturar la API pública de OpenStreetMap (Debounce)
         let autocompleteTimeout = null;
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -331,9 +329,6 @@
             document.getElementById("customCoordsInput").value = "";
         }
 
-        /**
-         * NUEVO MOTOR MÓDULO 4: Autocompletado Predictivo Georreferenciado Real (Nominatim)
-         */
         function handleStreetAutocomplete(e) {
             const query = e.target.value.trim();
             const listContainer = document.getElementById("autocompleteList");
@@ -347,17 +342,13 @@
                 return;
             }
 
-            // Retardo de 400ms para no saturar la red mientras tecleas rápido en el móvil
             autocompleteTimeout = setTimeout(async () => {
                 loadingSpinner.classList.remove("hidden");
                 try {
                     const targetMuni = MUNICIPALITIES[currentMunicipality].name;
-                    // Forzar consulta acotada al municipio y la provincia de Valencia
                     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&city=${encodeURIComponent(targetMuni)}&county=Valencia&country=Spain&addressdetails=1&limit=6`;
                     
-                    const response = await fetch(url, {
-                        headers: { 'Accept-Language': 'es' }
-                    });
+                    const response = await fetch(url, { headers: { 'Accept-Language': 'es' } });
                     const data = await response.json();
 
                     listContainer.innerHTML = "";
@@ -368,9 +359,7 @@
                     }
 
                     data.forEach(item => {
-                        // Extraer un nombre legible de la vía descartando redundancias del JSON
                         const displayName = item.address.road || item.display_name.split(',')[0];
-                        
                         const row = document.createElement("div");
                         row.className = "px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm cursor-pointer border-b border-gray-100 dark:border-gray-700 dark:text-gray-200";
                         row.textContent = displayName;
@@ -385,16 +374,13 @@
 
                     listContainer.classList.remove("hidden");
                 } catch (error) {
-                    console.error("Error en consulta predictiva:", error);
+                    console.error(error);
                 } finally {
                     loadingSpinner.classList.add("hidden");
                 }
             }, 400);
         }
 
-        /**
-         * NUEVO MOTOR MÓDULO 3: Procesado e integración de Geocodificación Manual Directa
-         */
         async function handleFormSubmit(event) {
             event.preventDefault();
             
@@ -405,18 +391,13 @@
             const customCoordsRaw = document.getElementById("customCoordsInput").value;
 
             let geoPoint = null;
-
-            // Bloquear botón para evitar duplicados en redes lentas 3G/4G
             submitBtn.disabled = true;
 
             if (customCoordsRaw) {
-                // Opción A: Proviene del marcado directo con el dedo
                 geoPoint = JSON.parse(customCoordsRaw);
             } else {
-                // Opción B: Geocodificación directa de dirección manual en la API pública
                 try {
                     const targetMuni = MUNICIPALITIES[currentMunicipality].name;
-                    // Intentamos localizar el portal exacto en la calle
                     const searchQueries = [
                         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum}&city=${encodeURIComponent(targetMuni)}&county=Valencia&country=Spain&limit=1`,
                         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}&city=${encodeURIComponent(targetMuni)}&county=Valencia&country=Spain&limit=1`
@@ -431,13 +412,12 @@
                         }
                     }
                 } catch (err) {
-                    console.error("Error al geocodificar dirección:", err);
+                    console.error(err);
                 }
             }
 
-            // Si la API falla por completo o no encuentra la calle
             if (!geoPoint) {
-                alert(`No se ha podido localizar la posición de "${streetName}". Por favor, usa el botón naranja para marcar su ubicación exacta directamente en el mapa.`);
+                alert(`No se ha encontrado "${streetName}". Usa el botón naranja para marcarlo con el dedo.`);
                 submitBtn.disabled = false;
                 return;
             }
@@ -499,7 +479,7 @@
                 row.className = "flex items-center justify-between p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg border-l-4 border-blue-900 dark:border-blue-500";
                 row.innerHTML = `
                     <div class="text-xs">
-                        <p class="font-bold dark:text-white">${stepNumber}. ${segment.street} (${MUNICIPALITIES[segment.municipality].name})</p>
+                        <p class="font-bold dark:text-white">${stepNumber}. ${segment.street}</p>
                         <p class="text-gray-500 dark:text-gray-400">Portal: ${segment.portal} • Acera: ${segment.sidewalk}</p>
                     </div>
                     <button onclick="removeSegment(${segment.id})" class="text-red-500 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
@@ -599,7 +579,7 @@
             activeRouteData = [];
             saveStateToLocalStorage();
             renderActiveRoute();
-            alert("Jornada guardada con éxito en el historial.");
+            alert("Jornada guardada con éxito.");
         }
 
         function triggerBackup() {
@@ -621,7 +601,52 @@
             document.getElementById("importFileInput").click();
         }
 
-        ... [Resto de funciones de importación y OTA intactas] ...
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.activeRoute && importedData.history) {
+                        activeRouteData = importedData.activeRoute;
+                        localStorage.setItem("amailia_history", JSON.stringify(importedData.history));
+                        saveStateToLocalStorage();
+                        renderActiveRoute();
+                        alert("Copia de seguridad restaurada.");
+                    } else {
+                        alert("Formato inválido.");
+                    }
+                } catch (err) {
+                    alert("Error al importar.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function checkUpdateOTA() {
+            try {
+                const currentLoc = window.location.href.split('?')[0];
+                const response = await fetch(`${currentLoc}?cb=${Date.now()}`, { method: 'HEAD' });
+                const serverEtag = response.headers.get("ETag");
+                const serverLastModified = response.headers.get("Last-Modified");
+                const localSignature = localStorage.getItem("amailia_ota_signature");
+                const currentServerSignature = serverEtag || serverLastModified;
+
+                if (!currentServerSignature) return;
+                if (localSignature && localSignature !== currentServerSignature) {
+                    if (confirm("¿Actualizar a la última versión disponible?")) {
+                        localStorage.setItem("amailia_ota_signature", currentServerSignature);
+                        window.location.reload(true);
+                    }
+                } else {
+                    localStorage.setItem("amailia_ota_signature", currentServerSignature);
+                    alert("AmailIA está actualizada.");
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        }
     </script>
 </body>
 </html>
