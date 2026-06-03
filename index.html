@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v4.2)</title>
+    <title>AmailIA - Optimización de Reparto (v5.0.0)</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,6 +19,8 @@
         .custom-sidebar { 
             transition: transform 0.3s ease-in-out; 
             padding-top: env(safe-area-inset-top, 0px);
+            /* Ocupar y pintar la franja blanca inferior de iOS */
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         
         .ios-safe-top {
@@ -92,7 +94,7 @@
             </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-5 space-y-6">
+        <div class="flex-1 overflow-y-auto p-5 space-y-5">
             
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Municipio de Cobertura</label>
@@ -167,19 +169,19 @@
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Tramos de la Ruta Actual</label>
-                <div id="liveRouteList" class="space-y-2 max-h-44 overflow-y-auto pr-1">
+                <div id="liveRouteList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
                     <p class="text-xs text-gray-400 italic text-center py-2">No hay tramos cargados en la jornada.</p>
                 </div>
             </div>
 
         </div>
 
-        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30 space-y-3">
+        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 space-y-3">
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="triggerBackup()" class="text-xs bg-gray-200 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 p-2.5 rounded-lg font-bold flex items-center justify-center space-x-1">
+                <button onclick="triggerBackup()" class="text-xs bg-gray-200 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 p-2.5 rounded-lg font-bold flex items-center justify-center space-x-1">
                     <span>Exportar (.JSON)</span>
                 </button>
-                <button onclick="triggerRestore()" class="text-xs bg-gray-200 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 p-2.5 rounded-lg font-bold flex items-center justify-center space-x-1">
+                <button onclick="triggerRestore()" class="text-xs bg-gray-200 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 p-2.5 rounded-lg font-bold flex items-center justify-center space-x-1">
                     <span>Importar Backup</span>
                 </button>
             </div>
@@ -188,12 +190,12 @@
                 <span>Archivar Jornada en Historial</span>
             </button>
 
-            <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-700 hover:bg-black dark:hover:bg-gray-600 text-white text-[11px] font-mono py-2 px-3 rounded-lg flex items-center justify-between">
-                <span class="flex items-center space-x-1">
+            <button onclick="checkUpdateOTA()" class="w-full bg-gray-950 dark:bg-gray-800 hover:bg-black dark:hover:bg-gray-700 text-white text-[11px] font-mono py-2.5 px-3 rounded-xl flex items-center justify-between border border-gray-800">
+                <span class="flex items-center space-x-1.5">
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     <span>Sincronización OTA</span>
                 </span>
-                <span class="underline">Verificar Versión</span>
+                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.0.0</span>
             </button>
         </div>
     </aside>
@@ -201,6 +203,9 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
+        // Versión fija del Software para auditoría en el terminal móvil
+        const APP_VERSION = "5.0.0";
+
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -217,6 +222,9 @@
         let autocompleteTimeout = null;
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Sincronizar el texto de la versión en la interfaz gráfica
+            document.getElementById("versionBadge").textContent = `v${APP_VERSION}`;
+            
             initLeafletMap();
             setupUIEventListeners();
             loadStateFromLocalStorage();
@@ -330,9 +338,6 @@
             document.getElementById("customCoordsInput").value = "";
         }
 
-        /**
-         * FUNCIÓN CORREGIDA: Sugerencias dinámicas en tiempo real con OpenStreetMap
-         */
         function handleStreetAutocomplete(e) {
             const query = e.target.value.trim();
             const listContainer = document.getElementById("autocompleteList");
@@ -350,11 +355,9 @@
                 loadingSpinner.classList.remove("hidden");
                 try {
                     const targetMuni = MUNICIPALITIES[currentMunicipality].name;
-                    // Búsqueda combinada abierta para forzar la coincidencia exacta dentro de l'Horta Sud
                     const combinedQuery = `${query}, ${targetMuni}, Valencia`;
                     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(combinedQuery)}&addressdetails=1&limit=6`;
                     
-                    // Se incluye el User-Agent para evitar el bloqueo del servidor de mapas
                     const response = await fetch(url, { 
                         headers: { 
                             'Accept-Language': 'es',
@@ -370,7 +373,6 @@
                         return;
                     }
 
-                    // Evitar duplicados visuales en el menú desplegable del móvil
                     const uniqueRoads = new Set();
 
                     data.forEach(item => {
@@ -399,11 +401,11 @@
                     }
 
                 } catch (error) {
-                    console.error("Fallo de red en autocompletado:", error);
-                } finally {
+                    console.error(error);
+                } finaly {
                     loadingSpinner.classList.add("hidden");
                 }
-            }, 400); // Debounce de 400ms para cuidar el consumo de datos móviles
+            }, 400);
         }
 
         async function handleFormSubmit(event) {
@@ -423,7 +425,6 @@
             } else {
                 try {
                     const targetMuni = MUNICIPALITIES[currentMunicipality].name;
-                    // Consultar portal exacto o eje vial de referencia
                     const searchQueries = [
                         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`,
                         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`
@@ -469,6 +470,24 @@
             map.panTo(geoPoint);
         }
 
+        /**
+         * FUNCIÓN DE REORDENACIÓN: Sube o baja elementos en la cola
+         * Provoca una reenumeración total de vectores en caliente.
+         */
+        function moveSegment(index, direction) {
+            const targetIndex = index + direction;
+            // Validar límites del array
+            if (targetIndex < 0 || targetIndex >= activeRouteData.length) return;
+            
+            // Intercambiar posiciones en memoria (Swap)
+            const temp = activeRouteData[index];
+            activeRouteData[index] = activeRouteData[targetIndex];
+            activeRouteData[targetIndex] = temp;
+            
+            saveStateToLocalStorage();
+            renderActiveRoute();
+        }
+
         function renderActiveRoute() {
             routeMarkersGroup.clearLayers();
             routeLinesGroup.clearLayers();
@@ -501,16 +520,25 @@
 
                 generateMicroPortals(segment.coords, segment.portal, segment.sidewalk);
 
+                // Crear fila de control con botones de reordenación integrados
                 const row = document.createElement("div");
                 row.className = "flex items-center justify-between p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg border-l-4 border-blue-900 dark:border-blue-500";
                 row.innerHTML = `
-                    <div class="text-xs">
+                    <div class="text-xs flex-1 pr-2">
                         <p class="font-bold dark:text-white">${stepNumber}. ${segment.street}</p>
                         <p class="text-gray-500 dark:text-gray-400">Portal: ${segment.portal} • Acera: ${segment.sidewalk}</p>
                     </div>
-                    <button onclick="removeSegment(${segment.id})" class="text-red-500 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
+                    <div class="flex items-center space-x-1">
+                        <button onclick="moveSegment(${index}, -1)" ${index === 0 ? 'disabled' : ''} class="p-1 bg-white dark:bg-gray-700 dark:text-gray-300 rounded shadow-sm disabled:opacity-30">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"></path></svg>
+                        </button>
+                        <button onclick="moveSegment(${index}, 1)" ${index === activeRouteData.length - 1 ? 'disabled' : ''} class="p-1 bg-white dark:bg-gray-700 dark:text-gray-300 rounded shadow-sm disabled:opacity-30">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path></svg>
+                        </button>
+                        <button onclick="removeSegment(${segment.id})" class="text-red-500 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
                 `;
                 listContainer.appendChild(row);
             });
@@ -523,7 +551,7 @@
                     dashArray: '8, 12',
                     lineJoin: 'round'
                 });
-                routeLinesGroup.addLayer(polyline);
+                polyline.addTo(routeLinesGroup);
             }
 
             evaluateDetailPortalsVisibility();
@@ -617,7 +645,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `amailia_v4.2_backup_${Date.now()}.json`);
+            downloadAnchor.setAttribute("download", `amailia_v${APP_VERSION}_backup.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
@@ -650,6 +678,9 @@
             reader.readAsText(file);
         }
 
+        /**
+         * ACTUALIZACIÓN OTA ASÍNCRONA: Compara firmas de compilación e informa al usuario
+         */
         async function checkUpdateOTA() {
             try {
                 const currentLoc = window.location.href.split('?')[0];
@@ -659,18 +690,22 @@
                 const localSignature = localStorage.getItem("amailia_ota_signature");
                 const currentServerSignature = serverEtag || serverLastModified;
 
-                if (!currentServerSignature) return;
+                if (!currentServerSignature) {
+                    alert(`Estás ejecutando la versión local v${APP_VERSION}. El servidor no devuelve firma HTTP para verificar actualizaciones.`);
+                    return;
+                }
+                
                 if (localSignature && localSignature !== currentServerSignature) {
-                    if (confirm("¿Actualizar a la última versión disponible?")) {
+                    if (confirm(`¡Nueva versión de AmailIA detectada en el repositorio remoto! ¿Deseas refrescar para actualizar la compilación actual?`)) {
                         localStorage.setItem("amailia_ota_signature", currentServerSignature);
                         window.location.reload(true);
                     }
                 } else {
                     localStorage.setItem("amailia_ota_signature", currentServerSignature);
-                    alert("AmailIA está actualizada.");
+                    alert(`Sincronización OTA Correcta.\n\nTu terminal está al día con la versión de producción: v${APP_VERSION}.`);
                 }
             } catch (error) {
-                console.log(error);
+                alert("Error de conexión al canal de actualización OTA de GitHub.");
             }
         }
     </script>
