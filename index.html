@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AmailIA - Geolocalización de Reparto</title>
+    <script src="[CDN_TAILWIND_V4]"></script>
+    <link rel="stylesheet" href="[CDN_LEAFLET_CSS]"/>
+    <script src="[CDN_LEAFLET_JS]"></script>
+    <style>
+        #map { height: 550px; width: 100%; border-radius: 0.75rem; z-index: 1; transition: filter 0.3s ease; }
+        .tab-active { border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-semibold; }
+        .leaflet-popup-content-wrapper { border-radius: 0.5rem; padding: 4px; }
+        .dark .leaflet-layer, .dark .leaflet-control-zoom-in, .dark .leaflet-control-zoom-out { 
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); 
+        }
+        .modal-transition { transition: opacity 0.25s ease, transform 0.25s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-300">
+    <header class="bg-indigo-950 dark:bg-slate-900 text-white shadow-md px-6 py-4 flex flex-row justify-between items-center gap-4 border-b border-indigo-900/40 dark:border-slate-800">
+        <div class="flex items-center gap-3">
+            <div class="bg-slate-900/40 p-1.5 rounded-xl border border-indigo-500/30 shrink-0 shadow-inner">
+                <svg class="w-9 h-9" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 25 L55 55 L85 35" stroke="#f43f5e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M25 80 L55 55 L75 85" stroke="#10b981" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M10 55 L90 55" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+                    <path d="M40 15 L55 55 L55 90" stroke="#fbbf24" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="55" cy="55" r="9" fill="#ffffff" stroke="#1e1b4b" stroke-width="4" />
+                    <circle cx="25" cy="80" r="5" fill="#10b981" />
+                    <circle cx="85" cy="35" r="5" fill="#f43f5e" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">AmailIA</h1>
+                <p class="text-indigo-300 dark:text-slate-400 text-xs mt-0.5 font-medium">Horta Sud · Catarroja · Albal · Massanassa</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="hidden md:flex items-center gap-1.5 bg-indigo-900/50 dark:bg-slate-800 px-4 py-2 rounded-lg text-xs font-medium border border-indigo-800/40 dark:border-slate-700">
+                <svg class="w-3.5 h-3.5 text-indigo-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"/>
+                </svg>
+                <span id="current-date-display" class="font-bold text-yellow-300 dark:text-indigo-300"></span>
+            </div>
+            <button onclick="toggleSettingsModal(true)" class="p-2.5 bg-indigo-900/60 hover:bg-indigo-800 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl border border-indigo-800/50 dark:border-slate-700 transition text-indigo-200 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1 flex flex-col gap-6">
+            <div class="bg-white dark:bg-slate-900 p-2 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 flex justify-around">
+                <button onclick="switchMunicipality('Catarroja')" id="tab-Catarroja" class="tab-btn px-3 py-2 text-sm font-semibold rounded-md text-slate-600 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition tab-active">Catarroja</button>
+                <button onclick="switchMunicipality('Albal')" id="tab-Albal" class="tab-btn px-3 py-2 text-sm font-semibold rounded-md text-slate-600 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition">Albal</button>
+                <button onclick="switchMunicipality('Massanassa')" id="tab-Massanassa" class="tab-btn px-3 py-2 text-sm font-semibold rounded-md text-slate-600 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition">Massanassa</button>
+            </div>
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800">
+                <h2 class="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/>
+                    </svg>Registrar Tramo de Calle
+                </h2>
+                <form id="street-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Municipio en Foco</label>
+                        <input type="text" id="display-municipality" readonly class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-sm rounded-lg p-2.5 font-bold outline-none">
+                    </div>
+                    <div>
+                        <label for="street-name" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Nombre de la Vía / Calle</label>
+                        <input type="text" id="street-name" required placeholder="Ej. Camí Reial" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 p-2.5 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="start-number" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Pto. Inicio (Nº)</label>
+                            <input type="number" id="start-number" required placeholder="Ej. 2" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 p-2.5 outline-none">
+                        </div>
+                        <div>
+                            <label for="number-type" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Acera de Trabajo</label>
+                            <select id="number-type" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 p-2.5 outline-none">
+                                <option value="Todos">Ambas (Creciente)</option>
+                                <option value="Pares">Solo Pares (Verde)</option>
+                                <option value="Impares">Solo Impares (Rojo)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg py-3 flex justify-center items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>Enlazar y Trazar en Mapa
+                    </button>
+                </form>
+            </div>
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 flex-1 flex flex-col min-h-[250px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-.101l-3.823 1.913a1.242 1.242 0 01-1.112 0L9.171 4.778a1.242 1.242 0 00-1.112 0L3.184 7.214c-.381.19-.622.58-.622 1.006v11.412c0 .836.88 1.38 1.628.101l3.823-1.913a1.242 1.242 0 011.112 0l3.823 1.913c.348.174.754.174 1.102 0z"/>
+                        </svg>Secuencia de Ruta Activa
+                    </h2>
+                    <span id="route-count" class="bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 text-xs font-bold px-2.5 py-0.5 rounded-full">0 tramos</span>
+                
+<div id="route-list" class="space-y-2 flex-1 overflow-y-auto max-h-[280px] text-xs text-slate-400 italic pr-1">No hay tramos enlazados para hoy.</div> <div class="pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-3 mt-4"> <button onclick="clearCurrentRoute()" class="border border-slate-300 text-slate-700 dark:text-slate-300 font-medium text-xs rounded-lg py-2.5 flex justify-center items-center gap-1.5">Limpiar Mapa</button> <button onclick="saveRouteToLog()" class="bg-emerald-600 text-white font-semibold text-xs rounded-lg py-2.5 flex justify-center items-center gap-1.5">Archivar Jornada</button> </div> </div> </div> <div class="lg:col-span-2 flex flex-col gap-6"> <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 flex flex-col"> <div id="map"></div> </div> <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800"> <tbody id="history-table-body"></tbody> </div> </div> </main> <script> // El motor OTA lee de forma dinámica la cabecera del servidor evitando cacheos estáticos. async function triggerOTACheck() { const btn = document.getElementById('ota-btn'); const msg = document.getElementById('ota-status-msg'); try { const fetchUrl = window.location.href.split('?')[0] + `?cb=${Date.now()}`; const response = await fetch(fetchUrl, { method: 'GET', cache: 'no-store' }); if (!response.ok) throw new Error("Error de conexión"); const remoteLastModified = response.headers.get('Last-Modified'); const remoteETag = response.headers.get('ETag'); let remoteBuildSignature = remoteLastModified ? new Date(remoteLastModified).toLocaleString('es-ES') : (remoteETag ? remoteETag.slice(0,12) : "Actualizado"); const localBuildSignature = localStorage.getItem('amailia_last_build_sig'); if (localBuildSignature && localBuildSignature !== remoteBuildSignature && localBuildSignature !== "Estándar-Producción") { msg.innerText = "¡Actualización encontrada! Cargando..."; localStorage.setItem('amailia_last_build_sig', remoteBuildSignature); setTimeout(() => { window.location.reload(true); }, 2000); } else { localStorage.setItem('amailia_last_build_sig', remoteBuildSignature); document.getElementById('app-version-tag').innerText = remoteBuildSignature; msg.innerText = "La app está en su última versión."; } } catch (error) { msg.innerText = "Error al verificar firmas."; } } </script> </body> </html>
