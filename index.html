@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v2)</title>
+    <title>AmailIA - Optimización de Reparto (v3)</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,24 +16,39 @@
 
     <style>
         body { touch-action: pan-x pan-y; }
-        .custom-sidebar { transition: transform 0.3s ease-in-out; }
+        .custom-sidebar { 
+            transition: transform 0.3s ease-in-out; 
+            /* Evitar que la cabecera del panel se meta debajo del notch en iOS */
+            padding-top: env(safe-area-inset-top, 0px);
+        }
         
+        /* SOLUCIÓN AL CORTE EN IOS: Respetar dinámicamente la Isla Dinámica / Notch */
+        .ios-safe-top {
+            top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+        }
+
         /* Filtro CSS para Modo Noche del Mapa */
         .dark-mode-map .leaflet-layer {
             filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
         }
         
-        /* Estilos para marcadores numéricos de la ruta */
+        /* ESTILO VECTORIAL CORREGIDO: Marcador circular numérico e identificable */
         .route-idx-marker {
-            background: #1e3a8a;
-            color: white;
-            border: 2px solid white;
+            background-color: #1e3a8a;
+            color: #ffffff;
+            border: 2px solid #ffffff;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            font-size: 13px;
+            font-weight: 800;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: transform 0.2s ease;
+        }
+
+        .route-idx-marker:active {
+            transform: scale(1.2);
         }
 
         /* Estado visual cuando el mapa espera un toque en la pantalla */
@@ -46,13 +61,13 @@
 
     <div id="map" class="h-full w-full absolute inset-0 z-0"></div>
 
-    <button id="menuBtn" class="absolute top-4 left-4 z-40 bg-white dark:bg-gray-800 p-3 rounded-xl shadow-xl flex items-center justify-center border border-gray-200 dark:border-gray-700 active:scale-95 transition-transform" aria-label="Abrir Menú">
+    <button id="menuBtn" class="ios-safe-top absolute left-4 z-40 bg-white dark:bg-gray-800 p-3.5 rounded-xl shadow-xl flex items-center justify-center border border-gray-200 dark:border-gray-700 active:scale-95 transition-transform" aria-label="Abrir Menú">
         <svg class="w-6 h-6 text-blue-900 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
     </button>
 
-    <div id="toastMapPicker" class="absolute top-4 left-20 right-4 z-40 bg-blue-950 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-blue-800 transform -translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <div id="toastMapPicker" class="ios-safe-top absolute left-20 right-4 z-40 bg-blue-950 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-blue-800 transform -translate-y-32 opacity-0 transition-all duration-300 pointer-events-none">
         <span class="flex h-3 w-3 relative">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
@@ -289,7 +304,7 @@
             document.getElementById("map").classList.add("map-picking-active");
             
             const toast = document.getElementById("toastMapPicker");
-            toast.classList.remove("-translate-y-24", "opacity-0");
+            toast.classList.remove("-translate-y-32", "opacity-0");
             toast.classList.add("translate-y-0", "opacity-100");
         }
 
@@ -299,7 +314,7 @@
             
             const toast = document.getElementById("toastMapPicker");
             toast.classList.remove("translate-y-0", "opacity-100");
-            toast.classList.add("-translate-y-24", "opacity-0");
+            toast.classList.add("-translate-y-32", "opacity-0");
 
             document.getElementById("customCoordsInput").value = JSON.stringify([latlng.lat, latlng.lng]);
             document.getElementById("streetInput").value = "Punto marcado en Mapa";
@@ -429,11 +444,12 @@
                 const stepNumber = index + 1;
                 polylinePoints.push(segment.coords);
 
+                // CONFIGURACIÓN DE DIVICON CON NÚMERO VISIBLE FIJO EN EL MAPA
                 const customIcon = L.divIcon({
                     className: 'route-idx-marker',
-                    html: `<span>${stepNumber}</span>`,
-                    iconSize: [28, 28],
-                    iconAnchor: [14, 14]
+                    html: `<span>${stepNumber}</span>`, // Inyección limpia del recorrido numerado
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
                 });
 
                 const marker = L.marker(segment.coords, { icon: customIcon })
@@ -525,7 +541,6 @@
             localStorage.setItem("amailia_current_muni", currentMunicipality);
         }
 
-        // Recuperar persistencia al recargar o guardar icono de pantalla de inicio
         function loadStateFromLocalStorage() {
             const savedRoute = localStorage.getItem("amailia_active_route");
             const savedMuni = localStorage.getItem("amailia_current_muni");
@@ -559,7 +574,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `amailia_v2_backup_${Date.now()}.json`);
+            downloadAnchor.setAttribute("download", `amailia_v3_backup_${Date.now()}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
