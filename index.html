@@ -1,203 +1,632 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full w-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AmailIA - Geolocalización de Reparto v2.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AmailIA - Optimización de Reparto</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1e3a8a">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <style>
-        body { font-family: sans-serif; }
-        #map { height: 100vh; width: 100%; }
-        /* Estilos personalizados para inputs y botones */
-        .sidebar-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.75rem;
-            font-size: 14px;
-            outline: none;
-            transition: all 0.2s;
+        /* Ajustes de scroll y visualización móvil */
+        body { touch-action: pan-x pan-y; }
+        .custom-sidebar { transition: transform 0.3s ease-in-out; }
+        
+        /* Filtro CSS para Modo Noche del Mapa */
+        .dark-mode-map .leaflet-layer {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
         }
-        .sidebar-input:focus { border-color: #3b82f6; ring: 2px #93c5fd; }
-        .plus-btn {
-            background-color: #3b82f6;
+        
+        /* Estilos personalizados para marcadores numéricos de la ruta */
+        .route-idx-marker {
+            background: #1e3a8a;
             color: white;
+            border: 2px solid white;
             border-radius: 50%;
-            width: 48px;
-            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
         }
-        .plus-btn:hover { background-color: #2563eb; }
-        .plus-btn svg { width: 24px; height: 24px; fill: white; }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body class="h-full w-full overflow-hidden bg-gray-100 font-sans text-gray-900 select-none">
 
-    <aside class="w-80 bg-white shadow-xl flex flex-col p-6 z-20">
-        <div class="flex items-center gap-3 mb-8">
-            <div class="p-1 rounded-xl bg-gray-900 shadow-inner">
-                <svg class="w-12 h-12" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 25 L55 55 L85 35" stroke="#0A2351" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M25 80 L55 55 L75 85" stroke="#0A2351" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M10 55 L90 55" stroke="#0A2351" stroke-width="6" stroke-linecap="round"/>
-                    <path d="M40 15 L55 55 L55 90" stroke="#0A2351" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="55" cy="55" r="9" fill="#ffffff" stroke="#0A2351" stroke-width="4" />
-                    <circle cx="25" cy="80" r="5" fill="#0A2351" />
-                    <circle cx="85" cy="35" r="5" fill="#0A2351" />
+    <div id="map" class="h-full w-full absolute inset-0 z-0"></div>
+
+    <button id="menuBtn" class="absolute top-4 left-4 z-40 bg-white dark:bg-gray-800 p-3 rounded-xl shadow-xl flex items-center justify-center border border-gray-200 dark:border-gray-700 active:scale-95 transition-transform" aria-label="Abrir Menú">
+        <svg class="w-6 h-6 text-blue-900 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+    </button>
+
+    <div id="sidebarOverlay" class="absolute inset-0 bg-black/40 z-40 hidden opacity-0 transition-opacity duration-300"></div>
+
+    <aside id="sidebar" class="custom-sidebar fixed inset-y-0 left-0 w-[85%] sm:w-[380px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-50 shadow-2xl flex flex-col justify-between transform -translate-x-full border-r border-gray-200 dark:border-gray-800">
+        
+        <div class="p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+            <div class="flex items-center space-x-3">
+                <svg class="w-9 h-9 text-blue-900 dark:text-blue-500" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 15 L85 15 L85 85 L15 85 Z" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+                    <path d="M15 50 L85 50" stroke="currentColor" stroke-width="6" stroke-dasharray="2 4"/>
+                    <path d="M50 15 L50 85" stroke="currentColor" stroke-width="6"/>
+                    <path d="M15 15 L85 85" stroke="currentColor" stroke-width="3"/>
+                    <circle cx="50" cy="50" r="8" fill="currentColor"/>
+                    <circle cx="15" cy="15" r="5" fill="#ef4444"/>
+                    <circle cx="85" cy="85" r="5" fill="#22c55e"/>
                 </svg>
-            </div>
-            <div>
-                <h1 class="text-2xl font-extrabold text-gray-950">AmailIA</h1>
-                <p class="text-xs text-gray-600">Horta Sud · Valencia</p>
-            </div>
-        </div>
-
-        <div class="mb-6">
-            <label class="block text-[11px] font-semibold uppercase text-gray-500 mb-1.5">Municipio Activo</label>
-            <select id="municipio" class="sidebar-input">
-                <option value="catarroja">Catarroja</option>
-                <option value="albal">Albal</option>
-                <option value="massanassa">Massanassa</option>
-            </select>
-        </div>
-
-        <div class="mb-6">
-            <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
-                Registrar Tramo de Calle
-            </h2>
-            <div class="space-y-4">
-                <input type="text" id="calle" placeholder="Nombre de la Vía / Calle" class="sidebar-input">
-                <input type="number" id="pto_inicio" placeholder="Pto. Inicio (Nº)" class="sidebar-input">
-                <select id="acera" class="sidebar-input">
-                    <option value="pares">Solo Pares</option>
-                    <option value="impares">Solo Impares</option>
-                    <option value="ambas">Ambas</option>
-                </select>
-                <div class="flex justify-center mt-6">
-                    <button id="add-tramo" class="plus-btn">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 4v16m8-8H4" stroke-width="2.5" stroke-linecap="round"/></svg>
-                    </button>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight text-blue-900 dark:text-white">AmailIA</h1>
+                    <p class="text-[10px] uppercase tracking-widest text-gray-500 dark:text-gray-400 font-bold">Horta Sud Logistics</p>
                 </div>
             </div>
+            <button id="closeSidebarBtn" class="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
 
-        <div class="flex-1 flex flex-col mt-4">
-            <h2 class="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-.101l-3.823 1.913a1.242 1.242 0 01-1.112 0L9.171 4.778a1.242 1.242 0 00-1.112 0L3.184 7.214c-.381.19-.622.58-.622 1.006v11.412c0 .836.88 1.38 1.628.101l3.823-1.913a1.242 1.242 0 011.112 0l3.823 1.913c.348.174.754.174 1.102 0z"/></svg>
-                Secuencia de Ruta Activa
-            </h2>
-            <div id="ruta-activa" class="flex-1 space-y-2 overflow-y-auto text-sm text-gray-700 italic pr-2">
-                No hay tramos registrados para hoy.
+        <div class="flex-1 overflow-y-auto p-5 space-y-6">
+            
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Municipio de Cobertura</label>
+                <div class="grid grid-cols-3 gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+                    <button onclick="switchMunicipality('catarroja')" id="tab-catarroja" class="tab-btn py-2 text-xs font-bold rounded-lg transition-all bg-white dark:bg-gray-700 shadow-sm text-blue-900 dark:text-white">Catarroja</button>
+                    <button onclick="switchMunicipality('albal')" id="tab-albal" class="tab-btn py-2 text-xs font-semibold rounded-lg transition-all text-gray-600 dark:text-gray-300">Albal</button>
+                    <button onclick="switchMunicipality('massanassa')" id="tab-massanassa" class="tab-btn py-2 text-xs font-semibold rounded-lg transition-all text-gray-600 dark:text-gray-300">Massanassa</button>
+                </div>
             </div>
-            <div class="grid grid-cols-2 gap-3 mt-6">
-                <button id="clear-map" class="text-xs font-semibold py-2.5 px-4 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50">Limpiar Mapa</button>
-                <button id="archive-day" class="text-xs font-semibold py-2.5 px-4 rounded-xl bg-gray-900 text-white hover:bg-black">Archivar Jornada</button>
+
+            <form id="routeForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <div class="relative">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Nombre de la Calle</label>
+                    <input type="text" id="streetInput" autocomplete="off" placeholder="Ej. Camí Reial" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-white" required>
+                    <div id="autocompleteList" class="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-48 overflow-y-auto hidden z-50"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Portal de Inicio</label>
+                        <input type="number" id="portalInput" min="1" placeholder="1" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-white" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Acera de Trabajo</label>
+                        <select id="sidewalkInput" class="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-white font-medium">
+                            <option value="ambas">Ambas</option>
+                            <option value="pares">Solo Pares</option>
+                            <option value="impares">Solo Impares</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center space-x-2 active:scale-[0.99] transition-transform">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+                    <span>Añadir Tramo a la Jornada</span>
+                </button>
+            </form>
+
+            <hr class="border-gray-200 dark:border-gray-800">
+
+            <div class="space-y-3">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Ajustes del Sistema</label>
+                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl">
+                    <span class="text-sm font-semibold dark:text-gray-300 flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <span>Visión Nocturna / Filtro Dark</span>
+                    </span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="nightModeToggle" onchange="toggleNightMode()" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
             </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Tramos de la Ruta Actual</label>
+                <div id="liveRouteList" class="space-y-2 max-h-44 overflow-y-auto pr-1">
+                    <p class="text-xs text-gray-400 italic text-center py-2">No hay tramos cargados en la jornada.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30 space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="triggerBackup()" class="text-xs bg-gray-200 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 p-2.5 rounded-lg font-bold flex items-center justify-center space-x-1">
+                    <span>Exportar (.JSON)</span>
+                </button>
+                <button onclick="triggerRestore()" class="text-xs bg-gray-200 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 p-2.5 rounded-lg font-bold flex items-center justify-center space-x-1">
+                    <span>Importar Backup</span>
+                </button>
+            </div>
+            
+            <button onclick="archiveCurrentJob()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow flex items-center justify-center space-x-2">
+                <span>Archivar Jornada en Historial</span>
+            </button>
+
+            <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-700 hover:bg-black dark:hover:bg-gray-600 text-white text-[11px] font-mono py-2 px-3 rounded-lg flex items-center justify-between">
+                <span class="flex items-center space-x-1">
+                    <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                    <span>Sincronización OTA</span>
+                </span>
+                <span class="underline">Verificar Versión</span>
+            </button>
         </div>
     </aside>
 
-    <main class="flex-1 h-screen z-10">
-        <div id="map"></div>
-    </main>
+    <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        // Coordenadas centrales de los municipios
-        const coords = {
-            catarroja: [39.4031, -0.4024],
-            albal: [39.3958, -0.4154],
-            massanassa: [39.4125, -0.3997]
+        // --- BASE DE DATOS GEOGRÁFICA LOCALIZADA EN L'HORTA SUD ---
+        const MUNICIPALITIES = {
+            catarroja: {
+                name: "Catarroja",
+                cp: "46470",
+                coords: [39.4031, -0.4024],
+                streets: ["Camí Reial", "Avinguda Rambleta", "Carrer Chapa", "Carrer Charco", "Carrer Filosa", "Carrer Pelayo", "Carrer Blasco Ibáñez", "Carrer Joanot Martorell", "Carrer l'Horta", "Carrer San Pedro"]
+            },
+            albal: {
+                name: "Albal",
+                cp: "46470",
+                coords: [39.3958, -0.4154],
+                streets: ["Avinguda de les Corts Valencianes", "Carrer de la Balaguera", "Carrer Tabacalera", "Carrer Hernández Lázaro", "Carrer Santa Anna", "Carrer San Carlos", "Carrer d'Aragó", "Carrer de la Constitució"]
+            },
+            massanassa: {
+                name: "Massanassa",
+                cp: "46460",
+                coords: [39.4125, -0.3997],
+                streets: ["Avinguda de Blasco Ibáñez", "Carrer Major", "Carrer Font Cabiscol", "Carrer de València", "Carrer Teodoro Llorente", "Carrer de Polinyà", "Carrer San Pere"]
+            }
         };
 
-        // Inicializar Mapa Leaflet
-        const map = L.map('map').setView(coords.catarroja, 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        // --- VARIABLES DE ESTADO LOGÍSTICO EN MEMORIA ---
+        let currentMunicipality = 'catarroja';
+        let map = null;
+        let activeRouteData = []; 
+        let routeMarkersGroup = null;
+        let routeLinesGroup = null;
+        let detailPortalsGroup = null;
 
-        // Capas para dibujar los tramos registrados
-        let layerGroup = L.layerGroup().addTo(map);
-        let currentRoute = [];
-
-        // Cambiar municipio
-        document.getElementById('municipio').addEventListener('change', (e) => {
-            const municipio = e.target.value;
-            map.flyTo(coords[municipio], 15);
+        // --- ARRANQUE E INICIALIZACIÓN DEL SISTEMA (DOM READY) ---
+        document.addEventListener("DOMContentLoaded", () => {
+            initLeafletMap();
+            setupUIEventListeners();
+            loadStateFromLocalStorage();
+            renderActiveRoute();
         });
 
-        // Simulación de portales y sentidos para un municipio (Catarroja)
-        const simData = {
-            'Calle Mayor': {
-                sentido: 1, // 1 creciente, -1 decreciente
-                portales: [
-                    {n: 10, c: [39.4029, -0.4036], acera: 'pares'},
-                    {n: 12, c: [39.4031, -0.4034], acera: 'pares'},
-                    {n: 14, c: [39.4033, -0.4032], acera: 'pares'},
-                    {n: 16, c: [39.4035, -0.4030], acera: 'pares'},
-                    {n: 11, c: [39.4030, -0.4037], acera: 'impares'},
-                    {n: 13, c: [39.4032, -0.4035], acera: 'impares'},
-                    {n: 15, c: [39.4034, -0.4033], acera: 'impares'},
-                    {n: 17, c: [39.4036, -0.4031], acera: 'impares'}
-                ]
-            }
-        };
-
-        // Añadir tramo al mapa y a la lista
-        document.getElementById('add-tramo').addEventListener('click', () => {
-            const calle = document.getElementById('calle').value;
-            const ptoInicio = document.getElementById('pto_inicio').value;
-            const acera = document.getElementById('acera').value;
-
-            if (!calle || !ptoInicio) return;
-
-            // Datos de simulación para mostrar funcionalidad
-            const data = simData[calle] || simData['Calle Mayor'];
+        // --- MÓDULO 1 & 3: CONFIGURACIÓN E INICIALIZACIÓN DE LEAFLET ---
+        function initLeafletMap() {
+            const initConf = MUNICIPALITIES[currentMunicipality];
             
-            // Dibujar tramos pares (verde) o impares (rojo) con flechas
-            layerGroup.clearLayers();
-            currentRoute = [];
+            // Instanciar mapa base apuntando a OpenStreetMap estándar
+            map = L.map('map', {
+                zoomControl: false, // Ocultado para liberar UI limpia en smartphones
+                attributionControl: false
+            }).setView(initConf.coords, 15);
 
-            if (acera === 'pares' || acera === 'ambas') {
-                const parPoints = data.portales.filter(p => p.acera === 'pares').map(p => p.c);
-                L.polyline(parPoints, {color: 'green', weight: 4, dashArray: '10, 10'}).addTo(layerGroup);
-                parPoints.forEach(c => L.circle(c, {radius: 3, color: 'green', fill: true}).addTo(layerGroup));
-            }
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
 
-            if (acera === 'impares' || acera === 'ambas') {
-                const imparPoints = data.portales.filter(p => p.acera === 'impares').map(p => p.c);
-                L.polyline(imparPoints, {color: 'red', weight: 4, dashArray: '10, 10'}).addTo(layerGroup);
-                imparPoints.forEach(c => L.circle(c, {radius: 3, color: 'red', fill: true}).addTo(layerGroup));
-            }
+            // Capas vectoriales dedicadas e independientes
+            routeMarkersGroup = L.layerGroup().addTo(map);
+            routeLinesGroup = L.layerGroup().addTo(map);
+            detailPortalsGroup = L.layerGroup().addTo(map);
 
-            // Añadir etiquetas con números y flecha de sentido
-            data.portales.forEach(p => {
-                const color = p.acera === 'pares' ? 'green' : 'red';
-                const label = L.divIcon({className: `bg-white px-1.5 py-0.5 rounded text-xs font-semibold text-${color}-800 border`, html: p.n});
-                L.marker(p.c, {icon: label}).addTo(layerGroup);
+            // Escuchador de Zoom para pintar o limpiar micro-portales dinámicos
+            map.on('zoomend', () => {
+                evaluateDetailPortalsVisibility();
+            });
+        }
+
+        // --- MÓDULO 2: INTERFAZ DE USUARIO (UI) Y NAVEGABILIDAD MÓVIL CRÍTICA ---
+        function setupUIEventListeners() {
+            const menuBtn = document.getElementById("menuBtn");
+            const closeSidebarBtn = document.getElementById("closeSidebarBtn");
+            const sidebarOverlay = document.getElementById("sidebarOverlay");
+            const sidebar = document.getElementById("sidebar");
+            const streetInput = document.getElementById("streetInput");
+
+            const openSidebar = () => {
+                sidebar.classList.remove("-translate-x-full");
+                sidebarOverlay.classList.remove("hidden");
+                setTimeout(() => sidebarOverlay.classList.add("opacity-100"), 10);
+            };
+
+            const closeSidebar = () => {
+                sidebar.classList.add("-translate-x-full");
+                sidebarOverlay.classList.remove("opacity-100");
+                setTimeout(() => sidebarOverlay.classList.add("hidden"), 300);
+            };
+
+            menuBtn.addEventListener("click", openSidebar);
+            closeSidebarBtn.addEventListener("click", closeSidebar);
+            sidebarOverlay.addEventListener("click", closeSidebar);
+
+            // Registrar mecanismo de autocompletado en el input de calles
+            streetInput.addEventListener("input", handleStreetAutocomplete);
+            
+            // Cerrar menú flotante si el usuario toca fuera de él estando en el input
+            document.addEventListener("click", (e) => {
+                if (e.target.id !== "streetInput") {
+                    document.getElementById("autocompleteList").classList.add("hidden");
+                }
+            });
+        }
+
+        // --- CAMBIO DE MUNICIPIO CON TRANSICIÓN SUAVE (FLYTO) ---
+        function switchMunicipality(muniKey) {
+            if (!MUNICIPALITIES[muniKey]) return;
+            currentMunicipality = muniKey;
+
+            // Alternar clases estéticas de las pestañas superiores
+            document.querySelectorAll(".tab-btn").forEach(btn => {
+                btn.classList.remove("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
+                btn.classList.add("text-gray-600", "dark:text-gray-300");
             });
 
-            // Actualizar Ruta Activa
-            const ruta = document.getElementById('ruta-activa');
-            if (currentRoute.length === 0) ruta.innerHTML = '';
-            currentRoute.push(`1. ${calle}, ${ptoInicio}, ${acera.toUpperCase()}`);
-            ruta.innerHTML = currentRoute.join('<br>');
+            const activeTab = document.getElementById(`tab-${muniKey}`);
+            activeTab.classList.remove("text-gray-600", "dark:text-gray-300");
+            activeTab.classList.add("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
 
-            // Limpiar inputs
-            document.getElementById('calle').value = '';
-            document.getElementById('pto_inicio').value = '';
-        });
+            // Ejecución de la transición suave del motor SIG
+            map.flyTo(MUNICIPALITIES[muniKey].coords, 15, {
+                animate: true,
+                duration: 1.2
+            });
 
-        document.getElementById('clear-map').addEventListener('click', () => {
-            layerGroup.clearLayers();
-            document.getElementById('ruta-activa').innerHTML = 'No hay tramos registrados para hoy.';
-        });
+            // Limpiar inputs para evitar contaminación de datos entre términos municipales
+            document.getElementById("routeForm").reset();
+        }
+
+        // --- MÓDULO 4: MOTOR DE AUTOSUGERENCIA / AUTOCOMPLETADO LOCAL ---
+        function handleStreetAutocomplete(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const listContainer = document.getElementById("autocompleteList");
+            listContainer.innerHTML = "";
+
+            if (query.length < 3) {
+                listContainer.classList.add("hidden");
+                return;
+            }
+
+            const filtered = MUNICIPALITIES[currentMunicipality].streets.filter(s => 
+                s.toLowerCase().includes(query)
+            );
+
+            if (filtered.length === 0) {
+                listContainer.classList.add("hidden");
+                return;
+            }
+
+            filtered.forEach(street => {
+                const item = document.createElement("div");
+                item.className = "px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm cursor-pointer border-b border-gray-100 dark:border-gray-700 dark:text-gray-200";
+                item.textContent = street;
+                item.addEventListener("click", () => {
+                    document.getElementById("streetInput").value = street;
+                    listContainer.classList.add("hidden");
+                });
+                listContainer.appendChild(item);
+            });
+
+            listContainer.classList.remove("hidden");
+        }
+
+        // --- MÓDULO 3: MOTOR LOGÍSTICO Y PROCESADO DE COORDENADAS AD-HOC ---
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            const streetName = document.getElementById("streetInput").value.trim();
+            const portalNum = parseInt(document.getElementById("portalInput").value);
+            const sidewalk = document.getElementById("sidewalkInput").value;
+
+            // Generar un punto geográfico consistente basado en la estructura de la calle
+            const geoPoint = generateDeterministicCoords(streetName, currentMunicipality);
+
+            // Generar el objeto del tramo de reparto
+            const routeSegment = {
+                id: Date.now(),
+                municipality: currentMunicipality,
+                street: streetName,
+                portal: portalNum,
+                sidewalk: sidewalk,
+                coords: geoPoint
+            };
+
+            // Guardar de forma acumulativa en el array de memoria sin sobreescribir anteriores
+            activeRouteData.push(routeSegment);
+            saveStateToLocalStorage();
+            renderActiveRoute();
+
+            // Limpieza y cierre automático de la UI táctil para liberar mapa
+            document.getElementById("routeForm").reset();
+            document.getElementById("sidebar").classList.add("-translate-x-full");
+            document.getElementById("sidebarOverlay").classList.remove("opacity-100");
+            setTimeout(() => document.getElementById("sidebarOverlay").classList.add("hidden"), 300);
+
+            // Encuadre de mapa en el nuevo punto objetivo
+            map.panTo(geoPoint);
+        }
+
+        /**
+         * Algoritmo determinista matemático para generar coordenadas SIG consistentes
+         * en entornos estáticos sin necesidad de servidores remotos de geocodificación.
+         */
+        function generateDeterministicCoords(stringInput, muniKey) {
+            const base = MUNICIPALITIES[muniKey].coords;
+            let hash = 0;
+            for (let i = 0; i < stringInput.length; i++) {
+                hash = stringInput.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            // Generar pequeñas desviaciones controladas a la redonda del centro urbano ($\pm 0.01$ grados)
+            const latOffset = ((hash % 100) / 10000) * (hash > 0 ? 1 : -1);
+            const lngOffset = (((hash >> 4) % 100) / 10000) * (hash > 0 ? -1 : 1);
+            
+            return [base[0] + latOffset, base[1] + lngOffset];
+        }
+
+        // --- CORE GEOGRÁFICO: RENDERIZACIÓN DE VECTORES Y MARCADORES ---
+        function renderActiveRoute() {
+            // Vaciar capas previas del mapa
+            routeMarkersGroup.clearLayers();
+            routeLinesGroup.clearLayers();
+            detailPortalsGroup.clearLayers();
+
+            const listContainer = document.getElementById("liveRouteList");
+            listContainer.innerHTML = "";
+
+            if (activeRouteData.length === 0) {
+                listContainer.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-2">No hay tramos cargados en la jornada.</p>`;
+                return;
+            }
+
+            const polylinePoints = [];
+
+            activeRouteData.forEach((segment, index) => {
+                const stepNumber = index + 1;
+                polylinePoints.push(segment.coords);
+
+                // 1. Añadir Marcador Numérico Secuencial Circular
+                const customIcon = L.divIcon({
+                    className: 'route-idx-marker',
+                    html: `<span>${stepNumber}</span>`,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
+                });
+
+                const marker = L.marker(segment.coords, { icon: customIcon })
+                    .bindPopup(`<b>Tramo #${stepNumber}</b><br>${segment.street}, No. ${segment.portal}<br>Acera: ${segment.sidewalk.toUpperCase()}`);
+                routeMarkersGroup.addLayer(marker);
+
+                // 2. Generar Micro-Portales en memoria (Renderizado condicional por Zoom)
+                generateMicroPortals(segment.coords, segment.portal, segment.sidewalk);
+
+                // 3. Renderizar elemento visual en la lista del panel de control
+                const row = document.createElement("div");
+                row.className = "flex items-center justify-between p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg border-l-4 border-blue-900 dark:border-blue-500";
+                row.innerHTML = `
+                    <div class="text-xs">
+                        <p class="font-bold dark:text-white">${stepNumber}. ${segment.street} (${MUNICIPALITIES[segment.municipality].name})</p>
+                        <p class="text-gray-500 dark:text-gray-400">Portal Inicial: ${segment.portal} • Acera: ${segment.sidewalk}</p>
+                    </div>
+                    <button onclick="removeSegment(${segment.id})" class="text-red-500 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                `;
+                listContainer.appendChild(row);
+            });
+
+            // 4. Pintar Vector de Avance (Polilínea Discontinua que conecta la jornada)
+            if (polylinePoints.length > 1) {
+                const polyline = L.polyline(polylinePoints, {
+                    color: '#1e3a8a',
+                    weight: 4,
+                    opacity: 0.8,
+                    dashArray: '8, 12',
+                    lineJoin: 'round'
+                });
+                routeLinesGroup.addLayer(polyline);
+            }
+
+            evaluateDetailPortalsVisibility();
+        }
+
+        /**
+         * Simulación SIG de Micro-portales adyacentes al eje central de la calle.
+         * Pares brillan en color Verde, Impares en color Rojo/Rosa.
+         */
+        function generateMicroPortals(centerCoords, startPortal, sidewalkMode) {
+            const numPortalsToSimulate = 6;
+            
+            for (let i = 0; i < numPortalsToSimulate; i++) {
+                let currentNum = startPortal + i;
+                
+                // Filtrado lógico según la acera seleccionada
+                if (sidewalkMode === 'pares' && currentNum % 2 !== 0) continue;
+                if (sidewalkMode === 'impares' && currentNum % 2 === 0) continue;
+
+                // Desviación métrica simulada para pintar el portal en paralelo a la vía
+                const latShift = (i * 0.00015);
+                const lngShift = (currentNum % 2 === 0 ? 0.0002 : -0.0002); // Pares a la derecha, impares a la izquierda
+                
+                const portalColor = (currentNum % 2 === 0) ? '#22c55e' : '#ef4444'; // Verde vs Rojo
+
+                const circleMarker = L.circleMarker([centerCoords[0] + latShift, centerCoords[1] + lngShift], {
+                    radius: 6,
+                    fillColor: portalColor,
+                    color: '#ffffff',
+                    weight: 1.5,
+                    fillOpacity: 0.9
+                }).bindTooltip(`Portal ${currentNum}`, { permanent: false, direction: 'top' });
+
+                detailPortalsGroup.addLayer(circleMarker);
+            }
+        }
+
+        // Controlador de visualización de portales según umbral de Zoom estricto
+        function evaluateDetailPortalsVisibility() {
+            if (map.getZoom() >= 17) {
+                if (!map.hasLayer(detailPortalsGroup)) map.addLayer(detailPortalsGroup);
+            } else {
+                if (map.hasLayer(detailPortalsGroup)) map.removeLayer(detailPortalsGroup);
+            }
+        }
+
+        // Eliminar tramo específico de la cola
+        function removeSegment(id) {
+            activeRouteData = activeRouteData.filter(s => s.id !== id);
+            saveStateToLocalStorage();
+            renderActiveRoute();
+        }
+
+        // --- MÓDULO 5: MANTENIMIENTO, PERSISTENCIA Y ACTUALIZACIÓN OTA ---
+        
+        function toggleNightMode() {
+            const isDark = document.getElementById("nightModeToggle").checked;
+            const mapContainer = document.getElementById("map");
+            
+            if (isDark) {
+                document.documentElement.classList.add("dark");
+                mapContainer.classList.add("dark-mode-map");
+            } else {
+                document.documentElement.classList.remove("dark");
+                mapContainer.classList.remove("dark-mode-map");
+            }
+        }
+
+        function saveStateToLocalStorage() {
+            localStorage.setItem("amailia_active_route", JSON.stringify(activeRouteData));
+            localStorage.setItem("amailia_current_muni", currentMunicipality);
+        }
+
+        function loadStateFromLocalStorage() {
+            const savedRoute = localStorage.getItem("amailia_active_route");
+            const savedMuni = localStorage.getItem("amailia_current_muni");
+            
+            if (savedRoute) activeRouteData = JSON.parse(savedRoute);
+            if (savedMuni) {
+                currentMunicipality = savedMuni;
+                switchMunicipality(currentMunicipality);
+            }
+        }
+
+        // Archivar Jornada y resetear el mapa operacional
+        function archiveCurrentJob() {
+            if (activeRouteData.length === 0) {
+                alert("No hay datos en la jornada actual para archivar.");
+                return;
+            }
+
+            let history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            const snapshotJob = {
+                date: new Date().toISOString(),
+                data: activeRouteData
+            };
+            
+            history.push(snapshotJob);
+            localStorage.setItem("amailia_history", JSON.stringify(history));
+            
+            // Vaciar jornada actual
+            activeRouteData = [];
+            saveStateToLocalStorage();
+            renderActiveRoute();
+            alert("Jornada guardada con éxito en el historial local del dispositivo.");
+        }
+
+        // Mecanismo de exportación de archivos JSON (Backup)
+        function triggerBackup() {
+            const backupPayload = {
+                activeRoute: activeRouteData,
+                history: JSON.parse(localStorage.getItem("amailia_history") || "[]"),
+                exportedAt: new Date().toISOString()
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `amailia_backup_${Date.now()}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // Disparador del input invisible para la restauración
+        function triggerRestore() {
+            document.getElementById("importFileInput").click();
+        }
+
+        // Procesador del archivo JSON de restauración (Restore)
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.activeRoute && importedData.history) {
+                        activeRouteData = importedData.activeRoute;
+                        localStorage.setItem("amailia_history", JSON.stringify(importedData.history));
+                        saveStateToLocalStorage();
+                        renderActiveRoute();
+                        alert("Copia de seguridad restaurada correctamente.");
+                    } else {
+                        alert("Formato de archivo inválido.");
+                    }
+                } catch (err) {
+                    alert("Error crítico leyendo el archivo de respaldo.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        /**
+         * Verificación Inalámbrica Avanzada (OTA) vía firmas HTTP
+         * Inyecta parámetros anti-caché dinámicos y contrasta las cabeceras del servidor.
+         */
+        async function checkUpdateOTA() {
+            try {
+                const currentLoc = window.location.href.split('?')[0];
+                // Inyección del parámetro anti-cache por Timestamp
+                const antiCacheUrl = `${currentLoc}?cb=${Date.now()}`;
+                
+                const response = await fetch(antiCacheUrl, { method: 'HEAD' });
+                
+                // Extraer firmas de validación HTTP
+                const serverEtag = response.headers.get("ETag");
+                const serverLastModified = response.headers.get("Last-Modified");
+                
+                const localSignature = localStorage.getItem("amailia_ota_signature");
+                const currentServerSignature = serverEtag || serverLastModified;
+
+                if (!currentServerSignature) {
+                    alert("Sincronización OTA: Servidor estático actual no soporta firmas de validación HTTP.");
+                    return;
+                }
+
+                if (localSignature && localSignature !== currentServerSignature) {
+                    if (confirm("¡Nueva actualización de producción detectada en GitHub! ¿Deseas aplicar los cambios en caliente ahora?")) {
+                        localStorage.setItem("amailia_ota_signature", currentServerSignature);
+                        window.location.reload(true); // Refresco forzado de la pestaña
+                    }
+                } else {
+                    localStorage.setItem("amailia_ota_signature", currentServerSignature);
+                    alert("AmailIA ya se encuentra actualizada a la última versión disponible en producción.");
+                }
+            } catch (error) {
+                console.error("Fallo de red en canal OTA:", error);
+                alert("No ha sido posible conectar con el servidor de despliegue. Revisa tu conexión de datos.");
+            }
+        }
     </script>
 </body>
 </html>
