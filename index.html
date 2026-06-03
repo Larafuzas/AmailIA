@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v4.1)</title>
+    <title>AmailIA - Optimización de Reparto (v4.2)</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -118,6 +118,7 @@
                 <div class="relative">
                     <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Nombre de la Calle</label>
                     <input type="text" id="streetInput" autocomplete="off" placeholder="Ej. Camí Reial" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-white" required>
+                    
                     <div id="autocompleteLoading" class="absolute right-3 top-9 hidden">
                         <svg class="animate-spin h-5 w-5 text-blue-900 dark:text-blue-400" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -329,6 +330,9 @@
             document.getElementById("customCoordsInput").value = "";
         }
 
+        /**
+         * FUNCIÓN CORREGIDA: Sugerencias dinámicas en tiempo real con OpenStreetMap
+         */
         function handleStreetAutocomplete(e) {
             const query = e.target.value.trim();
             const listContainer = document.getElementById("autocompleteList");
@@ -346,9 +350,17 @@
                 loadingSpinner.classList.remove("hidden");
                 try {
                     const targetMuni = MUNICIPALITIES[currentMunicipality].name;
-                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&city=${encodeURIComponent(targetMuni)}&county=Valencia&country=Spain&addressdetails=1&limit=6`;
+                    // Búsqueda combinada abierta para forzar la coincidencia exacta dentro de l'Horta Sud
+                    const combinedQuery = `${query}, ${targetMuni}, Valencia`;
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(combinedQuery)}&addressdetails=1&limit=6`;
                     
-                    const response = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+                    // Se incluye el User-Agent para evitar el bloqueo del servidor de mapas
+                    const response = await fetch(url, { 
+                        headers: { 
+                            'Accept-Language': 'es',
+                            'User-Agent': 'AmailIA-Logistics-App'
+                        } 
+                    });
                     const data = await response.json();
 
                     listContainer.innerHTML = "";
@@ -358,27 +370,40 @@
                         return;
                     }
 
+                    // Evitar duplicados visuales en el menú desplegable del móvil
+                    const uniqueRoads = new Set();
+
                     data.forEach(item => {
                         const displayName = item.address.road || item.display_name.split(',')[0];
-                        const row = document.createElement("div");
-                        row.className = "px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm cursor-pointer border-b border-gray-100 dark:border-gray-700 dark:text-gray-200";
-                        row.textContent = displayName;
                         
-                        row.addEventListener("click", () => {
-                            document.getElementById("streetInput").value = displayName;
-                            document.getElementById("customCoordsInput").value = ""; 
-                            listContainer.classList.add("hidden");
-                        });
-                        listContainer.appendChild(row);
+                        if (displayName && !uniqueRoads.has(displayName)) {
+                            uniqueRoads.add(displayName);
+                            
+                            const row = document.createElement("div");
+                            row.className = "px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm cursor-pointer border-b border-gray-100 dark:border-gray-700 dark:text-gray-200";
+                            row.textContent = displayName;
+                            
+                            row.addEventListener("click", () => {
+                                document.getElementById("streetInput").value = displayName;
+                                document.getElementById("customCoordsInput").value = ""; 
+                                listContainer.classList.add("hidden");
+                            });
+                            listContainer.appendChild(row);
+                        }
                     });
 
-                    listContainer.classList.remove("hidden");
+                    if (uniqueRoads.size > 0) {
+                        listContainer.classList.remove("hidden");
+                    } else {
+                        listContainer.classList.add("hidden");
+                    }
+
                 } catch (error) {
-                    console.error(error);
+                    console.error("Fallo de red en autocompletado:", error);
                 } finally {
                     loadingSpinner.classList.add("hidden");
                 }
-            }, 400);
+            }, 400); // Debounce de 400ms para cuidar el consumo de datos móviles
         }
 
         async function handleFormSubmit(event) {
@@ -398,13 +423,14 @@
             } else {
                 try {
                     const targetMuni = MUNICIPALITIES[currentMunicipality].name;
+                    // Consultar portal exacto o eje vial de referencia
                     const searchQueries = [
-                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum}&city=${encodeURIComponent(targetMuni)}&county=Valencia&country=Spain&limit=1`,
-                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}&city=${encodeURIComponent(targetMuni)}&county=Valencia&country=Spain&limit=1`
+                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`,
+                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`
                     ];
 
                     for (let url of searchQueries) {
-                        const res = await fetch(url);
+                        const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
                         const data = await res.json();
                         if (data && data.length > 0) {
                             geoPoint = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
@@ -591,7 +617,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `amailia_v4_backup_${Date.now()}.json`);
+            downloadAnchor.setAttribute("download", `amailia_v4.2_backup_${Date.now()}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
