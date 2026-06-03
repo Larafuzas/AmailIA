@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto</title>
+    <title>AmailIA - Optimización de Reparto (v2)</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,7 +15,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <style>
-        /* Ajustes de scroll y visualización móvil */
         body { touch-action: pan-x pan-y; }
         .custom-sidebar { transition: transform 0.3s ease-in-out; }
         
@@ -24,7 +23,7 @@
             filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
         }
         
-        /* Estilos personalizados para marcadores numéricos de la ruta */
+        /* Estilos para marcadores numéricos de la ruta */
         .route-idx-marker {
             background: #1e3a8a;
             color: white;
@@ -35,6 +34,11 @@
             justify-content: center;
             font-weight: bold;
             box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
+
+        /* Estado visual cuando el mapa espera un toque en la pantalla */
+        .map-picking-active {
+            cursor: crosshair !important;
         }
     </style>
 </head>
@@ -47,6 +51,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
     </button>
+
+    <div id="toastMapPicker" class="absolute top-4 left-20 right-4 z-40 bg-blue-950 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-blue-800 transform -translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+        <span class="flex h-3 w-3 relative">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>
+        <p class="text-xs font-semibold">Toca el punto exacto en el mapa para situar el tramo</p>
+    </div>
 
     <div id="sidebarOverlay" class="absolute inset-0 bg-black/40 z-40 hidden opacity-0 transition-opacity duration-300"></div>
 
@@ -82,6 +94,17 @@
                     <button onclick="switchMunicipality('albal')" id="tab-albal" class="tab-btn py-2 text-xs font-semibold rounded-lg transition-all text-gray-600 dark:text-gray-300">Albal</button>
                     <button onclick="switchMunicipality('massanassa')" id="tab-massanassa" class="tab-btn py-2 text-xs font-semibold rounded-lg transition-all text-gray-600 dark:text-gray-300">Massanassa</button>
                 </div>
+            </div>
+
+            <div>
+                <button type="button" onclick="activateMapPickerMode()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 active:scale-[0.99] transition-transform">
+                    <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
+                    </svg>
+                    <span class="text-xs">Marcar punto con el dedo en el mapa</span>
+                </button>
+                <input type="hidden" id="customCoordsInput" value="">
             </div>
 
             <form id="routeForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
@@ -164,7 +187,6 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        // --- BASE DE DATOS GEOGRÁFICA LOCALIZADA EN L'HORTA SUD ---
         const MUNICIPALITIES = {
             catarroja: {
                 name: "Catarroja",
@@ -186,15 +208,14 @@
             }
         };
 
-        // --- VARIABLES DE ESTADO LOGÍSTICO EN MEMORIA ---
         let currentMunicipality = 'catarroja';
         let map = null;
         let activeRouteData = []; 
         let routeMarkersGroup = null;
         let routeLinesGroup = null;
         let detailPortalsGroup = null;
+        let isMapPickingModeActive = false;
 
-        // --- ARRANQUE E INICIALIZACIÓN DEL SISTEMA (DOM READY) ---
         document.addEventListener("DOMContentLoaded", () => {
             initLeafletMap();
             setupUIEventListeners();
@@ -202,13 +223,11 @@
             renderActiveRoute();
         });
 
-        // --- MÓDULO 1 & 3: CONFIGURACIÓN E INICIALIZACIÓN DE LEAFLET ---
         function initLeafletMap() {
             const initConf = MUNICIPALITIES[currentMunicipality];
             
-            // Instanciar mapa base apuntando a OpenStreetMap estándar
             map = L.map('map', {
-                zoomControl: false, // Ocultado para liberar UI limpia en smartphones
+                zoomControl: false, 
                 attributionControl: false
             }).setView(initConf.coords, 15);
 
@@ -216,45 +235,31 @@
                 maxZoom: 19
             }).addTo(map);
 
-            // Capas vectoriales dedicadas e independientes
             routeMarkersGroup = L.layerGroup().addTo(map);
             routeLinesGroup = L.layerGroup().addTo(map);
             detailPortalsGroup = L.layerGroup().addTo(map);
 
-            // Escuchador de Zoom para pintar o limpiar micro-portales dinámicos
             map.on('zoomend', () => {
                 evaluateDetailPortalsVisibility();
             });
+
+            map.on('click', function(e) {
+                if (!isMapPickingModeActive) return;
+                handleMapClickCapture(e.latlng);
+            });
         }
 
-        // --- MÓDULO 2: INTERFAZ DE USUARIO (UI) Y NAVEGABILIDAD MÓVIL CRÍTICA ---
         function setupUIEventListeners() {
             const menuBtn = document.getElementById("menuBtn");
             const closeSidebarBtn = document.getElementById("closeSidebarBtn");
             const sidebarOverlay = document.getElementById("sidebarOverlay");
-            const sidebar = document.getElementById("sidebar");
             const streetInput = document.getElementById("streetInput");
-
-            const openSidebar = () => {
-                sidebar.classList.remove("-translate-x-full");
-                sidebarOverlay.classList.remove("hidden");
-                setTimeout(() => sidebarOverlay.classList.add("opacity-100"), 10);
-            };
-
-            const closeSidebar = () => {
-                sidebar.classList.add("-translate-x-full");
-                sidebarOverlay.classList.remove("opacity-100");
-                setTimeout(() => sidebarOverlay.classList.add("hidden"), 300);
-            };
 
             menuBtn.addEventListener("click", openSidebar);
             closeSidebarBtn.addEventListener("click", closeSidebar);
             sidebarOverlay.addEventListener("click", closeSidebar);
-
-            // Registrar mecanismo de autocompletado en el input de calles
             streetInput.addEventListener("input", handleStreetAutocomplete);
             
-            // Cerrar menú flotante si el usuario toca fuera de él estando en el input
             document.addEventListener("click", (e) => {
                 if (e.target.id !== "streetInput") {
                     document.getElementById("autocompleteList").classList.add("hidden");
@@ -262,12 +267,51 @@
             });
         }
 
-        // --- CAMBIO DE MUNICIPIO CON TRANSICIÓN SUAVE (FLYTO) ---
+        function openSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const sidebarOverlay = document.getElementById("sidebarOverlay");
+            sidebar.classList.remove("-translate-x-full");
+            sidebarOverlay.classList.remove("hidden");
+            setTimeout(() => sidebarOverlay.classList.add("opacity-100"), 10);
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const sidebarOverlay = document.getElementById("sidebarOverlay");
+            sidebar.classList.add("-translate-x-full");
+            sidebarOverlay.classList.remove("opacity-100");
+            setTimeout(() => sidebarOverlay.classList.add("hidden"), 300);
+        }
+
+        function activateMapPickerMode() {
+            isMapPickingModeActive = true;
+            closeSidebar();
+            document.getElementById("map").classList.add("map-picking-active");
+            
+            const toast = document.getElementById("toastMapPicker");
+            toast.classList.remove("-translate-y-24", "opacity-0");
+            toast.classList.add("translate-y-0", "opacity-100");
+        }
+
+        function handleMapClickCapture(latlng) {
+            isMapPickingModeActive = false;
+            document.getElementById("map").classList.remove("map-picking-active");
+            
+            const toast = document.getElementById("toastMapPicker");
+            toast.classList.remove("translate-y-0", "opacity-100");
+            toast.classList.add("-translate-y-24", "opacity-0");
+
+            document.getElementById("customCoordsInput").value = JSON.stringify([latlng.lat, latlng.lng]);
+            document.getElementById("streetInput").value = "Punto marcado en Mapa";
+            
+            openSidebar();
+            document.getElementById("portalInput").focus();
+        }
+
         function switchMunicipality(muniKey) {
             if (!MUNICIPALITIES[muniKey]) return;
             currentMunicipality = muniKey;
 
-            // Alternar clases estéticas de las pestañas superiores
             document.querySelectorAll(".tab-btn").forEach(btn => {
                 btn.classList.remove("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
                 btn.classList.add("text-gray-600", "dark:text-gray-300");
@@ -277,17 +321,15 @@
             activeTab.classList.remove("text-gray-600", "dark:text-gray-300");
             activeTab.classList.add("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
 
-            // Ejecución de la transición suave del motor SIG
             map.flyTo(MUNICIPALITIES[muniKey].coords, 15, {
                 animate: true,
                 duration: 1.2
             });
 
-            // Limpiar inputs para evitar contaminación de datos entre términos municipales
             document.getElementById("routeForm").reset();
+            document.getElementById("customCoordsInput").value = "";
         }
 
-        // --- MÓDULO 4: MOTOR DE AUTOSUGERENCIA / AUTOCOMPLETADO LOCAL ---
         function handleStreetAutocomplete(e) {
             const query = e.target.value.toLowerCase().trim();
             const listContainer = document.getElementById("autocompleteList");
@@ -313,6 +355,7 @@
                 item.textContent = street;
                 item.addEventListener("click", () => {
                     document.getElementById("streetInput").value = street;
+                    document.getElementById("customCoordsInput").value = "";
                     listContainer.classList.add("hidden");
                 });
                 listContainer.appendChild(item);
@@ -321,18 +364,21 @@
             listContainer.classList.remove("hidden");
         }
 
-        // --- MÓDULO 3: MOTOR LOGÍSTICO Y PROCESADO DE COORDENADAS AD-HOC ---
         function handleFormSubmit(event) {
             event.preventDefault();
             
             const streetName = document.getElementById("streetInput").value.trim();
             const portalNum = parseInt(document.getElementById("portalInput").value);
             const sidewalk = document.getElementById("sidewalkInput").value;
+            const customCoordsRaw = document.getElementById("customCoordsInput").value;
 
-            // Generar un punto geográfico consistente basado en la estructura de la calle
-            const geoPoint = generateDeterministicCoords(streetName, currentMunicipality);
+            let geoPoint;
+            if (customCoordsRaw) {
+                geoPoint = JSON.parse(customCoordsRaw);
+            } else {
+                geoPoint = generateDeterministicCoords(streetName, currentMunicipality);
+            }
 
-            // Generar el objeto del tramo de reparto
             const routeSegment = {
                 id: Date.now(),
                 municipality: currentMunicipality,
@@ -342,41 +388,29 @@
                 coords: geoPoint
             };
 
-            // Guardar de forma acumulativa en el array de memoria sin sobreescribir anteriores
             activeRouteData.push(routeSegment);
             saveStateToLocalStorage();
             renderActiveRoute();
 
-            // Limpieza y cierre automático de la UI táctil para liberar mapa
             document.getElementById("routeForm").reset();
-            document.getElementById("sidebar").classList.add("-translate-x-full");
-            document.getElementById("sidebarOverlay").classList.remove("opacity-100");
-            setTimeout(() => document.getElementById("sidebarOverlay").classList.add("hidden"), 300);
+            document.getElementById("customCoordsInput").value = "";
+            closeSidebar();
 
-            // Encuadre de mapa en el nuevo punto objetivo
             map.panTo(geoPoint);
         }
 
-        /**
-         * Algoritmo determinista matemático para generar coordenadas SIG consistentes
-         * en entornos estáticos sin necesidad de servidores remotos de geocodificación.
-         */
         function generateDeterministicCoords(stringInput, muniKey) {
             const base = MUNICIPALITIES[muniKey].coords;
             let hash = 0;
             for (let i = 0; i < stringInput.length; i++) {
                 hash = stringInput.charCodeAt(i) + ((hash << 5) - hash);
             }
-            // Generar pequeñas desviaciones controladas a la redonda del centro urbano ($\pm 0.01$ grados)
             const latOffset = ((hash % 100) / 10000) * (hash > 0 ? 1 : -1);
             const lngOffset = (((hash >> 4) % 100) / 10000) * (hash > 0 ? -1 : 1);
-            
             return [base[0] + latOffset, base[1] + lngOffset];
         }
 
-        // --- CORE GEOGRÁFICO: RENDERIZACIÓN DE VECTORES Y MARCADORES ---
         function renderActiveRoute() {
-            // Vaciar capas previas del mapa
             routeMarkersGroup.clearLayers();
             routeLinesGroup.clearLayers();
             detailPortalsGroup.clearLayers();
@@ -395,7 +429,6 @@
                 const stepNumber = index + 1;
                 polylinePoints.push(segment.coords);
 
-                // 1. Añadir Marcador Numérico Secuencial Circular
                 const customIcon = L.divIcon({
                     className: 'route-idx-marker',
                     html: `<span>${stepNumber}</span>`,
@@ -407,16 +440,14 @@
                     .bindPopup(`<b>Tramo #${stepNumber}</b><br>${segment.street}, No. ${segment.portal}<br>Acera: ${segment.sidewalk.toUpperCase()}`);
                 routeMarkersGroup.addLayer(marker);
 
-                // 2. Generar Micro-Portales en memoria (Renderizado condicional por Zoom)
                 generateMicroPortals(segment.coords, segment.portal, segment.sidewalk);
 
-                // 3. Renderizar elemento visual en la lista del panel de control
                 const row = document.createElement("div");
                 row.className = "flex items-center justify-between p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg border-l-4 border-blue-900 dark:border-blue-500";
                 row.innerHTML = `
                     <div class="text-xs">
                         <p class="font-bold dark:text-white">${stepNumber}. ${segment.street} (${MUNICIPALITIES[segment.municipality].name})</p>
-                        <p class="text-gray-500 dark:text-gray-400">Portal Inicial: ${segment.portal} • Acera: ${segment.sidewalk}</p>
+                        <p class="text-gray-500 dark:text-gray-400">Portal: ${segment.portal} • Acera: ${segment.sidewalk}</p>
                     </div>
                     <button onclick="removeSegment(${segment.id})" class="text-red-500 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -425,7 +456,6 @@
                 listContainer.appendChild(row);
             });
 
-            // 4. Pintar Vector de Avance (Polilínea Discontinua que conecta la jornada)
             if (polylinePoints.length > 1) {
                 const polyline = L.polyline(polylinePoints, {
                     color: '#1e3a8a',
@@ -440,25 +470,17 @@
             evaluateDetailPortalsVisibility();
         }
 
-        /**
-         * Simulación SIG de Micro-portales adyacentes al eje central de la calle.
-         * Pares brillan en color Verde, Impares en color Rojo/Rosa.
-         */
         function generateMicroPortals(centerCoords, startPortal, sidewalkMode) {
             const numPortalsToSimulate = 6;
-            
             for (let i = 0; i < numPortalsToSimulate; i++) {
                 let currentNum = startPortal + i;
                 
-                // Filtrado lógico según la acera seleccionada
                 if (sidewalkMode === 'pares' && currentNum % 2 !== 0) continue;
                 if (sidewalkMode === 'impares' && currentNum % 2 === 0) continue;
 
-                // Desviación métrica simulada para pintar el portal en paralelo a la vía
                 const latShift = (i * 0.00015);
-                const lngShift = (currentNum % 2 === 0 ? 0.0002 : -0.0002); // Pares a la derecha, impares a la izquierda
-                
-                const portalColor = (currentNum % 2 === 0) ? '#22c55e' : '#ef4444'; // Verde vs Rojo
+                const lngShift = (currentNum % 2 === 0 ? 0.0002 : -0.0002);
+                const portalColor = (currentNum % 2 === 0) ? '#22c55e' : '#ef4444';
 
                 const circleMarker = L.circleMarker([centerCoords[0] + latShift, centerCoords[1] + lngShift], {
                     radius: 6,
@@ -472,7 +494,6 @@
             }
         }
 
-        // Controlador de visualización de portales según umbral de Zoom estricto
         function evaluateDetailPortalsVisibility() {
             if (map.getZoom() >= 17) {
                 if (!map.hasLayer(detailPortalsGroup)) map.addLayer(detailPortalsGroup);
@@ -481,19 +502,15 @@
             }
         }
 
-        // Eliminar tramo específico de la cola
         function removeSegment(id) {
             activeRouteData = activeRouteData.filter(s => s.id !== id);
             saveStateToLocalStorage();
             renderActiveRoute();
         }
 
-        // --- MÓDULO 5: MANTENIMIENTO, PERSISTENCIA Y ACTUALIZACIÓN OTA ---
-        
         function toggleNightMode() {
             const isDark = document.getElementById("nightModeToggle").checked;
             const mapContainer = document.getElementById("map");
-            
             if (isDark) {
                 document.documentElement.classList.add("dark");
                 mapContainer.classList.add("dark-mode-map");
@@ -508,10 +525,10 @@
             localStorage.setItem("amailia_current_muni", currentMunicipality);
         }
 
+        // Recuperar persistencia al recargar o guardar icono de pantalla de inicio
         function loadStateFromLocalStorage() {
             const savedRoute = localStorage.getItem("amailia_active_route");
             const savedMuni = localStorage.getItem("amailia_current_muni");
-            
             if (savedRoute) activeRouteData = JSON.parse(savedRoute);
             if (savedMuni) {
                 currentMunicipality = savedMuni;
@@ -519,56 +536,42 @@
             }
         }
 
-        // Archivar Jornada y resetear el mapa operacional
         function archiveCurrentJob() {
             if (activeRouteData.length === 0) {
                 alert("No hay datos en la jornada actual para archivar.");
                 return;
             }
-
             let history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
-            const snapshotJob = {
-                date: new Date().toISOString(),
-                data: activeRouteData
-            };
-            
-            history.push(snapshotJob);
+            history.push({ date: new Date().toISOString(), data: activeRouteData });
             localStorage.setItem("amailia_history", JSON.stringify(history));
-            
-            // Vaciar jornada actual
             activeRouteData = [];
             saveStateToLocalStorage();
             renderActiveRoute();
-            alert("Jornada guardada con éxito en el historial local del dispositivo.");
+            alert("Jornada guardada con éxito en el historial.");
         }
 
-        // Mecanismo de exportación de archivos JSON (Backup)
         function triggerBackup() {
             const backupPayload = {
                 activeRoute: activeRouteData,
                 history: JSON.parse(localStorage.getItem("amailia_history") || "[]"),
                 exportedAt: new Date().toISOString()
             };
-
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `amailia_backup_${Date.now()}.json`);
+            downloadAnchor.setAttribute("download", `amailia_v2_backup_${Date.now()}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
         }
 
-        // Disparador del input invisible para la restauración
         function triggerRestore() {
             document.getElementById("importFileInput").click();
         }
 
-        // Procesador del archivo JSON de restauración (Restore)
         function handleImportFile(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -580,51 +583,39 @@
                         renderActiveRoute();
                         alert("Copia de seguridad restaurada correctamente.");
                     } else {
-                        alert("Formato de archivo inválido.");
+                        alert("Formato inválido.");
                     }
                 } catch (err) {
-                    alert("Error crítico leyendo el archivo de respaldo.");
+                    alert("Error leyendo el archivo.");
                 }
             };
             reader.readAsText(file);
         }
 
-        /**
-         * Verificación Inalámbrica Avanzada (OTA) vía firmas HTTP
-         * Inyecta parámetros anti-caché dinámicos y contrasta las cabeceras del servidor.
-         */
         async function checkUpdateOTA() {
             try {
                 const currentLoc = window.location.href.split('?')[0];
-                // Inyección del parámetro anti-cache por Timestamp
-                const antiCacheUrl = `${currentLoc}?cb=${Date.now()}`;
-                
-                const response = await fetch(antiCacheUrl, { method: 'HEAD' });
-                
-                // Extraer firmas de validación HTTP
+                const response = await fetch(`${currentLoc}?cb=${Date.now()}`, { method: 'HEAD' });
                 const serverEtag = response.headers.get("ETag");
                 const serverLastModified = response.headers.get("Last-Modified");
-                
                 const localSignature = localStorage.getItem("amailia_ota_signature");
                 const currentServerSignature = serverEtag || serverLastModified;
 
                 if (!currentServerSignature) {
-                    alert("Sincronización OTA: Servidor estático actual no soporta firmas de validación HTTP.");
+                    alert("OTA: El servidor no soporta validación por firmas HTTP.");
                     return;
                 }
-
                 if (localSignature && localSignature !== currentServerSignature) {
-                    if (confirm("¡Nueva actualización de producción detectada en GitHub! ¿Deseas aplicar los cambios en caliente ahora?")) {
+                    if (confirm("¿Actualizar a la versión de producción en GitHub?")) {
                         localStorage.setItem("amailia_ota_signature", currentServerSignature);
-                        window.location.reload(true); // Refresco forzado de la pestaña
+                        window.location.reload(true);
                     }
                 } else {
                     localStorage.setItem("amailia_ota_signature", currentServerSignature);
-                    alert("AmailIA ya se encuentra actualizada a la última versión disponible en producción.");
+                    alert("AmailIA se encuentra en la última versión.");
                 }
             } catch (error) {
-                console.error("Fallo de red en canal OTA:", error);
-                alert("No ha sido posible conectar con el servidor de despliegue. Revisa tu conexión de datos.");
+                alert("Error en canal OTA. Revisa la red.");
             }
         }
     </script>
