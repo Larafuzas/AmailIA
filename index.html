@@ -130,15 +130,14 @@
     .map-overlay-container.open { transform: translateX(0); }
     .map-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--bg-card); z-index: 31; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
     .map-header h2 { font-size: 1.1rem; }
-    #mapa-interactivo { flex-grow: 1; width: 100%; background: #e5e5e5; }
+    #mapa-interactivo { flex-grow: 1; width: 100%; background: #0f141e; display: flex; justify-content: center; align-items: center; color: var(--text-secondary);}
     
-    /* Forzar controles Leaflet en modo oscuro */
+    /* Controles Leaflet modo oscuro */
     .leaflet-bar a { background-color: var(--bg-card) !important; color: var(--text-main) !important; border-bottom-color: var(--color-gray) !important; }
 
     /* --------------------------------------------------- */
-    /* 6. PANEL DE AJUSTES Y OVERLAY (COLAPSO CORREGIDO)   */
+    /* 6. DRAWER (MENÚ COLAPSABLE CON BACKDROP)            */
     /* --------------------------------------------------- */
-    /* Fondo oscuro para capturar clicks fuera del menú */
     .drawer-backdrop {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0, 0, 0, 0.6); opacity: 0; visibility: hidden;
@@ -200,7 +199,7 @@
 
           <button class="btn-action btn-orange" onclick="abrirMapaYGeolocalizar()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            Marcar posición en mapa
+            Abrir mapa de la zona
           </button>
 
           <div class="form-group">
@@ -243,12 +242,12 @@
 
       <div class="map-overlay-container" id="map-modal">
         <div class="map-header">
-          <h2>Ruta Cartográfica</h2>
+          <h2>Mapeo en Vivo (OpenStreetMap)</h2>
           <button class="btn-icon" onclick="cerrarMapa()">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
-        <div id="mapa-interactivo"></div>
+        <div id="mapa-interactivo">Cargando mosaicos de mapa...</div>
       </div>
 
       <div class="drawer-backdrop" id="drawer-backdrop" onclick="toggleAjustes()"></div>
@@ -256,7 +255,7 @@
       <div class="ajustes-panel" id="drawer-ajustes">
         <div class="drawer-handle" onclick="toggleAjustes()"></div>
         <div class="ajustes-title">
-          <h2>Ajustes</h2>
+          <h2>Ajustes Base Geográfica</h2>
           <button class="btn-icon" onclick="toggleAjustes()">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
@@ -272,13 +271,13 @@
 
         <div class="status-card" id="status-card">
           <h3 id="status-term">Término: Catarroja</h3>
-          <p id="status-info">Estado: Comprobando base de datos...</p>
+          <p id="status-info">Estado: Comprobando caché local...</p>
         </div>
 
-        <button class="btn-outline" onclick="actualizarBaseOverpass()">Actualizar base</button>
-        <button class="btn-outline btn-danger" onclick="borrarDatosPueblo()">Borrar datos</button>
+        <button class="btn-outline" onclick="actualizarBaseOverpass()">Actualizar Registro de Calles</button>
+        <button class="btn-outline btn-danger" onclick="borrarDatosPueblo()">Borrar Caché Local</button>
 
-        <div class="btn-decorative">Firmas HTTP OTA Versión 1.0.1</div>
+        <div class="btn-decorative">Arquitectura Híbrida: API Online / Calles Offline</div>
       </div>
 
     </div>
@@ -290,7 +289,7 @@
     // ESTADOS Y REFERENCIAS
     let terminoActual = 'Catarroja';
     let jornada = [];
-    let mapaInstancia = null; // Guardará el mapa de Leaflet
+    let mapaInstancia = null;
 
     const DOM = {
       termBtns: document.querySelectorAll('.term-btn'),
@@ -300,43 +299,45 @@
       listaTramos: document.getElementById('lista-tramos'),
       datalist: document.getElementById('calles-list'),
       drawer: document.getElementById('drawer-ajustes'),
-      backdrop: document.getElementById('drawer-backdrop'), // Nuevo
-      mapModal: document.getElementById('map-modal'),       // Nuevo
+      backdrop: document.getElementById('drawer-backdrop'),
+      mapModal: document.getElementById('map-modal'),
       statusCard: document.getElementById('status-card'),
       statusTerm: document.getElementById('status-term'),
       statusInfo: document.getElementById('status-info'),
       appContainer: document.getElementById('app-container')
     };
 
-    // 1. SISTEMA DE MAPAS Y GEOLOCALIZACIÓN (Leaflet)
+    // 1. SISTEMA DE MAPAS ONLINE (OpenStreetMap via Leaflet)
     function abrirMapaYGeolocalizar() {
+      // Advertencia si no hay conexión a internet
+      if (!navigator.onLine) {
+        alert("Sin conexión a Internet.\nEl mapa de calles (OpenStreetMap) requiere datos móviles o Wi-Fi para cargar. Sin embargo, el registro manual de tu jornada sigue funcionando de forma local.");
+      }
+
       DOM.mapModal.classList.add('open');
       
-      // Iniciar el mapa solo la primera vez para optimizar rendimiento
+      // Instanciamos Leaflet apuntando a los servidores online de OSM
       if (!mapaInstancia) {
-        // Coordenadas base por defecto (Comunidad Valenciana aprox)
+        document.getElementById('mapa-interactivo').innerText = ''; // Limpiar texto de carga
         mapaInstancia = L.map('mapa-interactivo').setView([39.40, -0.40], 13);
         
+        // Tiles estándar online
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '© OpenStreetMap'
+            attribution: '© OpenStreetMap contributors'
         }).addTo(mapaInstancia);
 
-        // Intentar obtener geolocalización nativa del dispositivo
         mapaInstancia.locate({setView: true, maxZoom: 16});
 
-        // Evento al encontrar la ubicación
         mapaInstancia.on('locationfound', function(e) {
             L.marker(e.latlng).addTo(mapaInstancia)
-                .bindPopup("Ubicación de reparto actual").openPopup();
+                .bindPopup("Ubicación actual de reparto").openPopup();
         });
 
-        // Manejar errores de GPS (denegado o no disponible)
         mapaInstancia.on('locationerror', function(e) {
-            alert("No se pudo acceder a tu ubicación. El mapa se mostrará en las coordenadas por defecto.");
+            console.warn("Geolocalización desactivada o sin permisos.");
         });
       } else {
-        // Forzar a Leaflet a recalcular el tamaño del contenedor tras abrir la transición CSS
         setTimeout(() => mapaInstancia.invalidateSize(), 300);
       }
     }
@@ -345,19 +346,19 @@
       DOM.mapModal.classList.remove('open');
     }
 
-    // 2. GESTIÓN DEL DRAWER (Menú Desplegable con Backdrop)
+    // 2. GESTIÓN DEL MENÚ COLAPSABLE
     function toggleAjustes() {
       const isOculto = !DOM.drawer.classList.contains('open');
       if (isOculto) {
         DOM.drawer.classList.add('open');
-        DOM.backdrop.classList.add('active'); // Activa capa oscura
+        DOM.backdrop.classList.add('active');
       } else {
         DOM.drawer.classList.remove('open');
-        DOM.backdrop.classList.remove('active'); // Desactiva capa oscura
+        DOM.backdrop.classList.remove('active');
       }
     }
 
-    // El resto de la lógica de negocio y persistencia se mantiene intacta...
+    // 3. SELECCIÓN DE MUNICIPIO Y RECARGA OFFLINE
     DOM.termBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         DOM.inputCalle.value = '';
@@ -365,49 +366,65 @@
         DOM.termBtns.forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         terminoActual = e.target.getAttribute('data-term');
-        cargarDatosLocales();
+        cargarDatosLocales(); // Llama directamente a localStorage
       });
     });
 
+    // 4. DESCARGA ONLINE (Para uso posterior Offline)
     async function actualizarBaseOverpass() {
+      if (!navigator.onLine) {
+        return alert("Necesitas conexión a internet para descargar la base de calles.");
+      }
+
       DOM.statusCard.style.borderColor = 'var(--color-accent-orange)';
-      DOM.statusInfo.innerText = 'Descargando datos...';
+      DOM.statusInfo.innerText = 'Descargando desde la API...';
       const query = `[out:json];area["name"="${terminoActual}"]["admin_level"="8"]->.searchArea;(way["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary"](area.searchArea););out tags;`;
       const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
       try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error("Red");
+        if (!response.ok) throw new Error("Fallo en servidor");
         const data = await response.json();
         const callesSet = new Set();
-        data.elements.forEach(el => { if (el.tags && el.tags.name) callesSet.add(el.tags.name.trim()); });
+        
+        data.elements.forEach(el => { 
+          if (el.tags && el.tags.name) callesSet.add(el.tags.name.trim()); 
+        });
+        
         const callesArray = Array.from(callesSet).sort((a, b) => a.localeCompare(b, 'es'));
+        
+        // Se inyecta en el almacenamiento local del dispositivo para uso sin conexión
         localStorage.setItem(`db_vias_${terminoActual}`, JSON.stringify(callesArray));
         cargarDatosLocales();
       } catch (error) {
-        alert("Fallo al conectar con Overpass API.");
-        DOM.statusInfo.innerText = 'Error en la descarga';
+        alert("Error de conexión con Overpass API.");
+        DOM.statusInfo.innerText = 'Fallo en descarga';
         DOM.statusCard.style.borderColor = 'var(--color-accent-red)';
       }
     }
 
+    // 5. CARGA 100% OFFLINE (Desde LocalStorage a Interfaz)
     function cargarDatosLocales() {
       DOM.statusTerm.innerText = `Término: ${terminoActual}`;
       const dataString = localStorage.getItem(`db_vias_${terminoActual}`);
-      DOM.datalist.innerHTML = '';
+      DOM.datalist.innerHTML = ''; // Vacía el datalist
+      
       if (dataString) {
         const calles = JSON.parse(dataString);
         const sizeKb = (new Blob([dataString]).size / 1024).toFixed(2);
+        
+        // Rellena sugerencias de texto permitiendo trabajar sin internet
         calles.forEach(calle => {
           const option = document.createElement('option');
           option.value = calle;
           DOM.datalist.appendChild(option);
         });
+        
         DOM.statusCard.style.borderColor = 'var(--color-accent-green)';
-        DOM.statusInfo.innerText = `${calles.length} vías (${sizeKb} KB)`;
+        DOM.statusInfo.innerText = `Caché Local OK: ${calles.length} vías (${sizeKb} KB)`;
       } else {
-        DOM.statusCard.style.borderColor = 'var(--color-accent-orange)';
-        DOM.statusInfo.innerText = `SIN DATOS LOCALES`;
+        DOM.statusCard.style.borderColor = 'var(--color-accent-red)';
+        DOM.statusInfo.innerText = `Sin registro local. Actualiza la base.`;
       }
     }
 
@@ -415,17 +432,21 @@
       localStorage.removeItem(`db_vias_${terminoActual}`);
       DOM.inputCalle.value = '';
       cargarDatosLocales();
-      DOM.statusCard.style.borderColor = 'var(--color-accent-red)';
     }
 
+    // 6. LÓGICA DE LISTADO Y JORNADA
     function insertarTramoJornada() {
       const calle = DOM.inputCalle.value.trim();
       let portal = DOM.inputPortal.value.trim();
       const acera = DOM.selectAcera.value;
       if (!calle) return alert("Introduce una calle.");
       if (!portal) portal = 'S/N';
+      
       jornada.push({ id: Date.now().toString(), calle, portal, acera });
-      DOM.inputCalle.value = ''; DOM.inputPortal.value = ''; DOM.selectAcera.selectedIndex = 0;
+      
+      DOM.inputCalle.value = ''; 
+      DOM.inputPortal.value = ''; 
+      DOM.selectAcera.selectedIndex = 0;
       renderizarListado();
     }
 
@@ -457,7 +478,8 @@
     function finalizarJornada() {
       if (jornada.length === 0) return alert("La jornada está vacía.");
       alert(`Jornada finalizada.\nTotal tramos: ${jornada.length}`);
-      jornada = []; renderizarListado();
+      jornada = []; 
+      renderizarListado();
     }
 
     function toggleNightVision() {
@@ -466,6 +488,7 @@
         : DOM.appContainer.classList.remove('night-vision');
     }
 
+    // Inicializar comprobación de caché local al arrancar
     window.addEventListener('DOMContentLoaded', cargarDatosLocales);
   </script>
 </body>
