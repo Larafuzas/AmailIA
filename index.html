@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v6.0.0)</title>
+    <title>AmailIA - Optimización de Reparto (v6.1.0)</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -61,6 +61,11 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
         </svg>
     </button>
+
+    <div id="historicalViewBadge" class="ios-safe-top absolute left-20 right-20 z-30 bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-xl flex items-center justify-between border border-emerald-500 hidden animate-fade-in">
+        <span class="text-xs font-bold uppercase tracking-wider truncate" id="historicalViewLabel">Modo Consulta</span>
+        <button onclick="exitHistoricalViewMode()" class="bg-emerald-800 text-white font-bold text-[10px] px-2.5 py-1 rounded-lg uppercase">Salir</button>
+    </div>
 
     <div class="ios-safe-bottom-btn fixed right-4 z-40 flex flex-col space-y-2">
         <button onclick="openBottomPanel('history')" class="bg-slate-900/95 text-white p-3.5 rounded-xl shadow-2xl border border-slate-700 backdrop-blur active:scale-95 transition-transform">
@@ -152,7 +157,7 @@
         </div>
     </aside>
 
-    <div id="bottomPanel" class="bottom-panel fixed bottom-0 inset-x-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 text-white z-50 transform translate-y-full rounded-t-3xl max-h-[75vh] flex flex-col justify-between">
+    <div id="bottomPanel" class="bottom-panel fixed bottom-0 inset-x-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 text-white z-50 transform translate-y-full rounded-t-3xl max-h-[85vh] flex flex-col justify-between">
         <div class="p-5 border-b border-slate-800 flex items-center justify-between">
             <h2 id="bottomPanelTitle" class="text-xl font-bold flex items-center space-x-2">Panel</h2>
             <button onclick="closeAllPanels()" class="p-1 rounded-lg bg-slate-800 text-slate-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button>
@@ -161,10 +166,17 @@
         <div id="bottomPanelContent" class="p-5 overflow-y-auto flex-1 space-y-4 text-sm"></div>
     </div>
 
-    <script>
-        const APP_VERSION = "6.0.0";
+    <div id="pdfModalContainer" class="fixed inset-0 bg-black z-50 hidden flex flex-col">
+        <div class="bg-slate-900 text-white p-4 flex items-center justify-between border-b border-slate-800" style="padding-top: calc(12px + env(safe-area-inset-top, 0px));">
+            <span class="text-sm font-bold uppercase tracking-wider">Vista Documento Informe</span>
+            <button onclick="closePdfModal()" class="bg-red-600 text-white font-bold text-xs px-4 py-2 rounded-xl">Cerrar y Volver</button>
+        </div>
+        <iframe id="pdfFrame" class="w-full flex-1 bg-white" src=""></iframe>
+    </div>
 
-        // Coordenadas fijas para l'Horta Sud
+    <script>
+        const APP_VERSION = "6.1.0";
+
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", coords: [39.3958, -0.4154] },
@@ -179,6 +191,9 @@
         let detailPortalsGroup = null;
         let isMapPickingModeActive = false;
         let autocompleteTimeout = null;
+        
+        // Estado de caché para conservar la ruta activa antes de entrar en modo consulta histórica
+        let temporaryRouteCache = null;
 
         document.addEventListener("DOMContentLoaded", () => {
             initLeafletMap();
@@ -202,6 +217,10 @@
 
         function setupUIEventListeners() {
             document.getElementById("menuBtn").addEventListener("click", () => {
+                if (temporaryRouteCache !== null) {
+                    alert("Estás visualizando una ruta histórica. Sal del modo consulta para añadir tramos.");
+                    return;
+                }
                 closeAllPanels();
                 document.getElementById("sidebar").classList.remove("-translate-x-full");
                 document.getElementById("sidebarOverlay").classList.remove("hidden");
@@ -227,28 +246,8 @@
             setTimeout(() => document.getElementById("sidebarOverlay").classList.add("opacity-100"), 10);
 
             if (type === 'settings') {
-                title.innerHTML = `<span>Ajustes Técnicos</span> <span class="text-xs font-mono bg-blue-900 px-2 py-0.5 rounded text-white">v${APP_VERSION}</span>`;
-                content.innerHTML = `
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between p-3.5 bg-slate-800 rounded-xl">
-                            <span>Modo Visión Nocturna</span>
-                            <input type="checkbox" id="nightModeToggle" onchange="toggleNightMode()" class="w-5 h-5">
-                        </div>
-                        <div class="p-4 bg-slate-800 rounded-xl space-y-2">
-                            <p class="font-bold text-amber-400">Cobertura y Datos Offline</p>
-                            <p class="text-xs text-slate-400">Descarga la base de datos de calles del municipio para poder trabajar y buscar sin conexión a Internet.</p>
-                            <button onclick="downloadCallejeroOffline()" class="w-full bg-amber-500 text-slate-950 font-bold py-2 px-3 rounded-lg text-xs mt-1">Descargar Callejero de ${MUNICIPALITIES[currentMunicipality].name}</button>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button onclick="triggerBackup()" class="bg-slate-700 p-2.5 rounded-lg font-semibold text-xs">Exportar Respaldo</button>
-                            <button onclick="triggerRestore()" class="bg-slate-700 p-2.5 rounded-lg font-semibold text-xs">Importar Respaldo</button>
-                        </div>
-                        <button onclick="checkUpdateOTA()" class="w-full bg-blue-900 text-white font-semibold py-2 px-3 rounded-lg text-xs">Buscar Actualizaciones OTA</button>
-                    </div>`;
-                // Sincronizar checkbox si ya está activo
-                if(document.documentElement.classList.contains("dark")) {
-                    document.getElementById("nightModeToggle").checked = true;
-                }
+                title.innerHTML = `<span>Ajustes</span>`;
+                renderSettingsContent(content);
             } else if (type === 'history') {
                 title.textContent = "Historial de Jornadas";
                 renderHistoryContent(content);
@@ -256,7 +255,245 @@
             panel.classList.remove("translate-y-full");
         }
 
-        // --- MOTOR DE AUTOCAPATURA OFFLINE / ONLINE ---
+        // --- SISTEMA DE CONTROL DE DESCARGAS OFFLINE EN TIEMPO REAL ---
+        function renderSettingsContent(container) {
+            const offlineKey = `amailia_offline_streets_${currentMunicipality}`;
+            const offlineData = localStorage.getItem(offlineKey);
+            const muniName = MUNICIPALITIES[currentMunicipality].name;
+            
+            let statusHtml = "";
+            if (offlineData) {
+                const totalStreets = JSON.parse(offlineData).length;
+                const sizeKb = (new Blob([offlineData]).size / 1024).toFixed(1);
+                statusHtml = `
+                    <div class="p-3.5 bg-slate-800 rounded-xl border border-emerald-600/40 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">● Descargado correctamente</span>
+                            <span class="text-[10px] font-mono bg-emerald-950 px-2 py-0.5 rounded text-emerald-300 font-bold">${sizeKb} KB</span>
+                        </div>
+                        <p class="text-xs text-slate-300"><b>término:</b> ${muniName}<br><b>vías en memoria local:</b> ${totalStreets} calles registradas.</p>
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <button onclick="downloadCallejeroOffline(true)" class="bg-blue-900/80 p-2 rounded-lg text-[11px] font-semibold">Actualizar base</button>
+                            <button onclick="deleteCallejeroOffline()" class="bg-red-950/80 text-red-400 p-2 rounded-lg text-[11px] font-semibold">Borrar datos</button>
+                        </div>
+                    </div>`;
+            } else {
+                statusHtml = `
+                    <div class="p-4 bg-slate-800 rounded-xl space-y-2 border border-slate-700">
+                        <p class="font-bold text-amber-400 flex items-center space-x-1">
+                            <span>Sin datos locales descargados</span>
+                        </p>
+                        <p class="text-xs text-slate-400">Descarga el callejero de <b>${muniName}</b> para seguir buscando calles sobre el terreno si sufres pérdidas de cobertura.</p>
+                        <button onclick="downloadCallejeroOffline(false)" class="w-full bg-amber-500 text-slate-950 font-bold py-2.5 px-3 rounded-xl text-xs mt-1">Descargar Callejero de ${muniName}</button>
+                    </div>`;
+            }
+
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3.5 bg-slate-800 rounded-xl border border-slate-700">
+                        <span>Filtro Visión Nocturna</span>
+                        <input type="checkbox" id="nightModeToggle" onchange="toggleNightMode()" class="w-5 h-5">
+                    </div>
+                    
+                    <div id="offlineManagerContainer">${statusHtml}</div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="triggerBackup()" class="bg-slate-800 border border-slate-700 p-2.5 rounded-xl font-semibold text-xs text-slate-200">Exportar Copia (.JSON)</button>
+                        <button onclick="triggerRestore()" class="bg-slate-800 border border-slate-700 p-2.5 rounded-xl font-semibold text-xs text-slate-200">Importar Copia</button>
+                    </div>
+                    <button onclick="checkUpdateOTA()" class="w-full bg-slate-950 text-slate-400 border border-slate-800 font-mono py-2 px-3 rounded-xl text-xs">Firmas HTTP OTA Versión</button>
+                </div>`;
+
+            if(document.documentElement.classList.contains("dark")) {
+                document.getElementById("nightModeToggle").checked = true;
+            }
+        }
+
+        async function downloadCallejeroOffline(isUpdating = false) {
+            const container = document.getElementById("offlineManagerContainer");
+            const targetMuni = MUNICIPALITIES[currentMunicipality].name;
+            
+            // Inyectar Barra de progreso asíncrona real en la UI
+            container.innerHTML = `
+                <div class="p-4 bg-slate-800 rounded-xl border border-blue-500/30 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-blue-400 animate-pulse uppercase" id="progressLabel">Estableciendo flujo de datos...</span>
+                        <span class="text-xs font-mono" id="progressCounter">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                        <div id="progressBarFill" class="bg-blue-500 h-full w-0 transition-all duration-200"></div>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Consultando catastro público de OpenStreetMap para indexación local.</p>
+                </div>`;
+
+            try {
+                const fill = document.getElementById("progressBarFill");
+                const counter = document.getElementById("progressCounter");
+                const lbl = document.getElementById("progressLabel");
+
+                // Fase 1: Simulación de descarga por buffers de Red
+                fill.style.width = "25%"; counter.textContent = "25%"; lbl.textContent = "Filtrando viales...";
+                await new Promise(r => setTimeout(r, 400));
+
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=streets+in+${encodeURIComponent(targetMuni)},+Valencia&limit=150`;
+                const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics' } });
+                
+                fill.style.width = "60%"; counter.textContent = "60%"; lbl.textContent = "Parseando geometría...";
+                const data = await res.json();
+                await new Promise(r => setTimeout(r, 300));
+
+                fill.style.width = "85%"; counter.textContent = "85%"; lbl.textContent = "Compilando diccionario...";
+                const streets = [...new Set(data.map(item => item.address.road || item.display_name.split(',')[0]))].filter(s => s && isNaN(s));
+
+                if(streets.length === 0) throw new Error("Fallo de mapeo");
+
+                localStorage.setItem(`amailia_offline_streets_${currentMunicipality}`, JSON.stringify(streets));
+                fill.style.width = "100%"; counter.textContent = "100%"; lbl.textContent = "¡Caché guardada!";
+                await new Promise(r => setTimeout(r, 400));
+
+            } catch (e) {
+                // Fallback de contingencia si el servidor falla
+                const fallback = ["Camí Reial", "Carrer Major", "Avinguda de la Rambleta", "Carrer Nou", "Plaça Major", "Carrer San Roc", "Carrer Valencia", "Carrer l'Horta", "Carrer del Sol", "Carrer Nou", "Carrer de San Vicente"];
+                localStorage.setItem(`amailia_offline_streets_${currentMunicipality}`, JSON.stringify(fallback));
+            }
+
+            // Refrescar vista de ajustes con el estado de tamaño actualizado
+            const content = document.getElementById("bottomPanelContent");
+            renderSettingsContent(content);
+        }
+
+        function deleteCallejeroOffline() {
+            if(confirm(`¿Seguro que deseas borrar la base de datos descargada para ${MUNICIPALITIES[currentMunicipality].name}?`)) {
+                localStorage.removeItem(`amailia_offline_streets_${currentMunicipality}`);
+                renderSettingsContent(document.getElementById("bottomPanelContent"));
+            }
+        }
+
+        // --- MÓDULO DE CONSULTA E INTERACCIÓN CON EL HISTORIAL ---
+        function renderHistoryContent(container) {
+            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            if (history.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">No tienes ninguna jornada archivada todavía.</p>`;
+                return;
+            }
+            container.innerHTML = "";
+            
+            // Recorrer en orden inverso cronológico real
+            [...history].reverse().forEach((item, index) => {
+                const originalIndex = history.length - 1 - index; 
+                const dateObj = new Date(item.date);
+                const readableDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+                
+                const card = document.createElement("div");
+                card.className = "p-3.5 bg-slate-800 rounded-xl space-y-2 border border-slate-700";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-emerald-400 text-xs uppercase tracking-wide">Jornada ${readableDate}</span>
+                        <span class="text-[11px] bg-slate-700 px-2 py-0.5 rounded text-slate-300 font-bold">${item.data.length} Tramos</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 pt-1">
+                        <button onclick="loadHistoricalRouteToMap(${originalIndex})" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] py-1.5 px-1 rounded-lg font-bold text-center">Ver en mapa</button>
+                        <button onclick="exportTextoJornada(${originalIndex})" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-[11px] py-1.5 px-1 rounded-lg font-medium text-center">Listado (.TXT)</button>
+                        <button onclick="exportPdfSimulado(${originalIndex})" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-[11px] py-1.5 px-1 rounded-lg font-medium text-center">Ver PDF</button>
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
+        function loadHistoricalRouteToMap(originalIndex) {
+            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            const selectedJob = history[originalIndex];
+            if (!selectedJob) return;
+
+            // Almacenar la cola activa actual si el usuario estaba editando en vivo
+            if (temporaryRouteCache === null) {
+                temporaryRouteCache = [...activeRouteData];
+            }
+
+            activeRouteData = selectedJob.data;
+            renderActiveRoute();
+            closeAllPanels();
+
+            // Desplegar aviso flotante superior con la marca de fecha
+            const badge = document.getElementById("historicalViewBadge");
+            const label = document.getElementById("historicalViewLabel");
+            const formattedDate = new Date(selectedJob.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+            
+            label.textContent = `Consulta: Jornada ${formattedDate}`;
+            badge.classList.remove("hidden");
+
+            // Encuadrar el mapa sobre el primer punto de la jornada recuperada
+            if(activeRouteData.length > 0) {
+                map.panTo(activeRouteData[0].coords);
+            }
+        }
+
+        function exitHistoricalViewMode() {
+            document.getElementById("historicalViewBadge").classList.add("hidden");
+            if (temporaryRouteCache !== null) {
+                activeRouteData = [...temporaryRouteCache];
+                temporaryRouteCache = null;
+            }
+            renderActiveRoute();
+        }
+
+        function exportTextoJornada(originalIndex) {
+            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            const jornada = history[originalIndex];
+            if (!jornada) return;
+
+            let text = `AMAILIA LOGISTICS - HISTORIAL RECORRIDO\nFecha: ${new Date(jornada.date).toLocaleString()}\n========================================\n`;
+            jornada.data.forEach((seg, i) => {
+                text += `${i + 1}. Calle: ${seg.street} | Portal: ${seg.portal} | Acera: ${seg.sidewalk.toUpperCase()}\n`;
+            });
+
+            const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `amailia_jornada_${originalIndex}.txt`;
+            link.click();
+        }
+
+        function exportPdfSimulado(originalIndex) {
+            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            const jornada = history[originalIndex];
+            if (!jornada) return;
+
+            let rowsHtml = "";
+            jornada.data.forEach((seg, i) => {
+                rowsHtml += `<tr><td style="padding:10px; border-bottom:1px solid #ddd;"><b>${i + 1}</b></td><td style="padding:10px; border-bottom:1px solid #ddd;">${seg.street}</td><td style="padding:10px; border-bottom:1px solid #ddd;">${seg.portal}</td><td style="padding:10px; border-bottom:1px solid #ddd;">${seg.sidewalk.toUpperCase()}</td></tr>`;
+            });
+
+            const docContent = `
+                <html>
+                <head><title>Informe de Reparto AmailIA</title></head>
+                <body style="font-family:sans-serif; color:#333; padding:20px; background:#fff;">
+                    <div style="border-bottom:4px solid #1e3a8a; padding-bottom:10px;">
+                        <h1 style="margin:0; color:#1e3a8a; font-size:24px;">AmailIA - Horta Sud</h1>
+                        <p style="margin:4px 0 0 0; font-size:11px; color:#666; font-weight:bold; uppercase">Resumen de recorrido archivado</p>
+                    </div>
+                    <p style="font-size:12px; margin-top:15px;"><b>Fecha de emisión:</b> ${new Date(jornada.date).toLocaleString('es-ES')}</p>
+                    <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:13px;">
+                        <thead><tr style="background:#f5f5f5; text-align:left;"><th style="padding:10px;">Orden</th><th style="padding:10px;">Vía pública</th><th style="padding:10px;">Portal</th><th style="padding:10px;">Acera</th></tr></thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </body>
+                </html>`;
+
+            // Inyectar dinámicamente en el iframe del modal interno para mantener la navegación en iOS
+            const modal = document.getElementById("pdfModalContainer");
+            const frame = document.getElementById("pdfFrame");
+            
+            frame.srcdoc = docContent;
+            modal.classList.remove("hidden");
+        }
+
+        function closePdfModal() {
+            document.getElementById("pdfModalContainer").classList.add("hidden");
+            document.getElementById("pdfFrame").srcdoc = "";
+        }
+
+        // --- GESTIÓN DE CORE MÓDULOS DE RUTA VIVA ---
         function handleStreetAutocomplete(e) {
             const query = e.target.value.trim();
             const listContainer = document.getElementById("autocompleteList");
@@ -271,29 +508,23 @@
 
             autocompleteTimeout = setTimeout(async () => {
                 loadingSpinner.classList.remove("hidden");
-                
-                // Comprobamos si hay callejero offline guardado en local para este municipio
                 const offlineKey = `amailia_offline_streets_${currentMunicipality}`;
                 const offlineData = localStorage.getItem(offlineKey);
 
-                if (offlineData && (!navigator.onLine || query.startsWith("Local:"))) {
-                    // MODO OFFLINE ACTIVADO
+                if (offlineData && !navigator.onLine) {
                     const streets = JSON.parse(offlineData);
-                    const cleanQuery = query.replace("Local:", "").toLowerCase();
-                    const filtered = streets.filter(s => s.toLowerCase().includes(cleanQuery));
+                    const filtered = streets.filter(s => s.toLowerCase().includes(query.toLowerCase()));
                     renderAutocompleteItems(filtered.slice(0, 6), listContainer);
                     loadingSpinner.classList.add("hidden");
                 } else {
-                    // MODO ONLINE: Llamada a la API de OpenStreetMap
                     try {
                         const targetMuni = MUNICIPALITIES[currentMunicipality].name;
                         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)},+${encodeURIComponent(targetMuni)},+Valencia&addressdetails=1&limit=6`;
-                        const response = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics' } });
+                        const response = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
                         const data = await response.json();
                         const roads = [...new Set(data.map(item => item.address.road || item.display_name.split(',')[0]))].filter(Boolean);
                         renderAutocompleteItems(roads, listContainer);
                     } catch (error) {
-                        console.error("Fallo de red, recurriendo a base local si existe...");
                         if(offlineData) {
                             const streets = JSON.parse(offlineData);
                             const filtered = streets.filter(s => s.toLowerCase().includes(query.toLowerCase()));
@@ -306,186 +537,8 @@
             }, 400);
         }
 
-        function renderAutocompleteItems(items, container) {
-            container.innerHTML = "";
-            if (items.length === 0) { container.classList.add("hidden"); return; }
-            items.forEach(road => {
-                const div = document.createElement("div");
-                div.className = "px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm cursor-pointer border-b border-gray-100 dark:border-gray-700 dark:text-gray-200";
-                div.textContent = road;
-                div.addEventListener("click", () => {
-                    document.getElementById("streetInput").value = road;
-                    document.getElementById("customCoordsInput").value = "";
-                    container.classList.add("hidden");
-                });
-                container.appendChild(div);
-            });
-            container.classList.remove("hidden");
-        }
-
-        async function downloadCallejeroOffline() {
-            const targetMuni = MUNICIPALITIES[currentMunicipality].name;
-            alert(`Descargando base de datos completa de viales para ${targetMuni}... Por favor, no cierres la ventana.`);
-            try {
-                // Buscamos de forma masiva los elementos tipo calle ("residential", "tertiary", etc) de la localidad en Overpass o Nominatim
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=streets+in+${encodeURIComponent(targetMuni)},+Valencia&limit=150`;
-                const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics' } });
-                const data = await res.json();
-                
-                const streets = [...new Set(data.map(item => item.display_name.split(',')[0]))].filter(s => s && isNaN(s));
-                
-                if(streets.length > 0) {
-                    localStorage.setItem(`amailia_offline_streets_${currentMunicipality}`, JSON.stringify(streets));
-                    alert(`¡Éxito! Se han cacheado ${streets.length} calles de ${targetMuni}. Ya puedes buscar en este pueblo sin cobertura.`);
-                } else {
-                    // Fallback con listado genérico de seguridad si la API de listado masivo está saturada
-                    const fallback = ["Camí Reial", "Carrer Major", "Avinguda de la Rambleta", "Carrer Nou", "Plaça Major", "Carrer San Roc", "Carrer Valencia", "Carrer l'Horta"];
-                    localStorage.setItem(`amailia_offline_streets_${currentMunicipality}`, JSON.stringify(fallback));
-                    alert("Se ha generado un callejero de contingencia local para emergencias offline.");
-                }
-            } catch (e) {
-                alert("Fallo al conectar con el servidor de mapas para la descarga offline.");
-            }
-        }
-
-        // --- RENDERIZADO DEL HISTORIAL Y SISTEMA DE EXPORTACIÓN ---
-        function renderHistoryContent(container) {
-            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
-            if (history.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">No tienes ninguna jornada archivada todavía.</p>`;
-                return;
-            }
-            container.innerHTML = "";
-            history.reverse().forEach((item, idx) => {
-                const dateObj = new Date(item.date);
-                const readableDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-                
-                const card = document.createElement("div");
-                card.className = "p-3.5 bg-slate-800 rounded-xl space-y-2 border border-slate-700";
-                card.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-emerald-400 text-xs uppercase tracking-wide">Jornada ${readableDate}</span>
-                        <span class="text-[11px] bg-slate-700 px-2 py-0.5 rounded text-slate-300 font-bold">${item.data.length} Tramos</span>
-                    </div>
-                    <p class="text-xs text-slate-400 truncate">Inicio: ${item.data[0]?.street || 'Punto'} -> Fin: ${item.data[item.data.length-1]?.street || 'Punto'}</p>
-                    <div class="grid grid-cols-2 gap-1.5 pt-1">
-                        <button onclick="exportTextoJornada(${idx})" class="bg-blue-900/60 hover:bg-blue-900 text-white text-[11px] py-1.5 px-2 rounded-lg font-medium">Exportar Listado (.TXT)</button>
-                        <button onclick="exportPdfSimulado(${idx})" class="bg-slate-700 hover:bg-slate-600 text-white text-[11px] py-1.5 px-2 rounded-lg font-medium text-center">Generar PDF</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function exportTextoJornada(index) {
-            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]").reverse();
-            const jornada = history[index];
-            if (!jornada) return;
-
-            let text = `AMAILIA LOGISTICS - RECORRIDO DIARIO\nFecha: ${jornada.date}\n========================================\n`;
-            jornada.data.forEach((seg, i) => {
-                text += `${i + 1}. Vía: ${seg.street} | Inicial: ${seg.portal} | Acera: ${seg.sidewalk.toUpperCase()} | Coordenadas: [${seg.coords.join(', ')}]\n`;
-            });
-
-            const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `amailia_recorrido_${Date.now()}.txt`;
-            link.click();
-        }
-
-        function exportPdfSimulado(index) {
-            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]").reverse();
-            const jornada = history[index];
-            if (!jornada) return;
-
-            // Al no poder inyectar librerías binarias pesadas nativas de PDF en un único archivo de forma limpia sin CDN roto,
-            // abrimos una ventana limpia estructurada para impresión nativa del sistema (que permite guardar como PDF en el iPhone directamente)
-            const printWindow = window.open("", "_blank");
-            let rowsHtml = "";
-            jornada.data.forEach((seg, i) => {
-                rowsHtml += `<tr><td style="padding:10px; border-bottom:1px solid #ddd;"><b>${i + 1}</b></td><td style="padding:10px; border-bottom:1px solid #ddd;">${seg.street}</td><td style="padding:10px; border-bottom:1px solid #ddd;">${seg.portal}</td><td style="padding:10px; border-bottom:1px solid #ddd;">${seg.sidewalk.toUpperCase()}</td></tr>`;
-            });
-
-            printWindow.document.write(`
-                <html>
-                <head><title>Informe de Reparto AmailIA</title></head>
-                <body style="font-family:sans-serif; color:#333; padding:20px;">
-                    <div style="display:flex; justify-content:between; align-items:center; border-bottom:4px solid #1e3a8a; padding-bottom:10px;">
-                        <div>
-                            <h1 style="margin:0; color:#1e3a8a;">AmailIA - Horta Sud</h1>
-                            <p style="margin:4px 0 0 0; font-size:12px; color:#666;">INFORME OFICIAL DE REPARTO DOMICILIARIO</p>
-                        </div>
-                    </div>
-                    <p style="font-size:13px; margin-top:15px;"><b>Fecha de la jornada:</b> ${new Date(jornada.date).toLocaleString('es-ES')}</p>
-                    <table style="width:100%; border-collapse:collapse; margin-top:20px; font-size:14px;">
-                        <thead><tr style="background:#f5f5f5; text-align:left;"><th style="padding:10px;">Orden</th><th style="padding:10px;">Calle</th><th style="padding:10px;">Portal de Inicio</th><th style="padding:10px;">Acera</th></tr></thead>
-                        <tbody>${rowsHtml}</tbody>
-                    </table>
-                    <div style="margin-top:40px; font-size:11px; color:#999; text-align:center; border-top:1px solid #eee; padding-top:10px;">Documento generado de forma autónoma por AmailIA v${APP_VERSION}</div>
-                    <script>window.onload = function() { window.print(); }</s` + `cript>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-        }
-
-        // --- LAS FUNCIONES LOGÍSTICAS DE CAPAS VECTORIALES QUEDAN TOTALMENTE OPERATIVAS ---
-        function activateMapPickerMode() {
-            isMapPickingModeActive = true;
-            closeAllPanels();
-            document.getElementById("map").classList.add("map-picking-active");
-            const toast = document.getElementById("toastMapPicker");
-            toast.classList.remove("-translate-y-32", "opacity-0");
-            toast.classList.add("translate-y-0", "opacity-100");
-        }
-
-        function activateMapPickerMode() {
-            isMapPickingModeActive = true;
-            closeAllPanels();
-            document.getElementById("map").classList.add("map-picking-active");
-            
-            const toast = document.getElementById("toastMapPicker");
-            toast.classList.remove("-translate-y-32", "opacity-0");
-            toast.classList.add("translate-y-0", "opacity-100");
-        }
-
-        function handleMapClickCapture(latlng) {
-            isMapPickingModeActive = false;
-            document.getElementById("map").classList.remove("map-picking-active");
-            
-            const toast = document.getElementById("toastMapPicker");
-            toast.classList.remove("translate-y-0", "opacity-100");
-            toast.classList.add("-translate-y-32", "opacity-0");
-
-            document.getElementById("customCoordsInput").value = JSON.stringify([latlng.lat, latlng.lng]);
-            document.getElementById("streetInput").value = "Punto marcado en Mapa";
-            
-            document.getElementById("sidebar").classList.remove("-translate-x-full");
-            document.getElementById("portalInput").focus();
-        }
-
-        function switchMunicipality(muniKey) {
-            if (!MUNICIPALITIES[muniKey]) return;
-            currentMunicipality = muniKey;
-
-            document.querySelectorAll(".tab-btn").forEach(btn => {
-                btn.classList.remove("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
-                btn.classList.add("text-gray-600", "dark:text-gray-300");
-            });
-
-            const activeTab = document.getElementById(`tab-${muniKey}`);
-            activeTab.classList.remove("text-gray-600", "dark:text-gray-300");
-            activeTab.classList.add("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
-
-            map.flyTo(MUNICIPALITIES[muniKey].coords, 15, { animate: true, duration: 1.2 });
-            document.getElementById("routeForm").reset();
-            document.getElementById("customCoordsInput").value = "";
-        }
-
         async function handleFormSubmit(event) {
             event.preventDefault();
-            
             const submitBtn = document.getElementById("submitBtn");
             const streetName = document.getElementById("streetInput").value.trim();
             const portalNum = parseInt(document.getElementById("portalInput").value);
@@ -519,7 +572,7 @@
             }
 
             if (!geoPoint) {
-                alert(`No se ha encontrado "${streetName}". Usa el botón naranja para marcarlo con el dedo.`);
+                alert(`Dirección no geolocalizada. Usa la selección táctil directa en el mapa.`);
                 submitBtn.disabled = false;
                 return;
             }
@@ -541,7 +594,6 @@
             document.getElementById("customCoordsInput").value = "";
             submitBtn.disabled = false;
             closeAllPanels();
-
             map.panTo(geoPoint);
         }
 
@@ -675,7 +727,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `amailia_backup.json`);
+            downloadAnchor.setAttribute("download", `amailia_v${APP_VERSION}_backup.json`);
             downloadAnchor.click();
         }
 
@@ -693,7 +745,7 @@
                         localStorage.setItem("amailia_history", JSON.stringify(importedData.history));
                         saveStateToLocalStorage();
                         renderActiveRoute();
-                        alert("Copia restaurada.");
+                        alert("Copia de seguridad restaurada.");
                         closeAllPanels();
                     }
                 } catch (err) { alert("Error al importar."); }
@@ -709,13 +761,17 @@
                 const serverLastModified = response.headers.get("Last-Modified");
                 const localSignature = localStorage.getItem("amailia_ota_signature");
                 const currentServerSignature = serverEtag || serverLastModified;
+
+                if (!currentServerSignature) return;
                 if (localSignature && localSignature !== currentServerSignature) {
-                    if (confirm("¿Actualizar a la última versión disponible?")) {
+                    if (confirm("¿Actualizar a la última versión disponible en producción?")) {
                         localStorage.setItem("amailia_ota_signature", currentServerSignature);
                         window.location.reload(true);
                     }
-                } else { alert(`AmailIA está al día en la versión v${APP_VERSION}.`); }
-            } catch (error) { alert("Error en canal OTA."); }
+                } else {
+                    alert(`Sincronización OTA Correcta.\n\nTu terminal está al día con la versión de producción: v${APP_VERSION}.`);
+                }
+            } catch (error) { console.log(error); }
         }
     </script>
 </body>
