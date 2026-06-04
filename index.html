@@ -1,672 +1,776 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AmailIA - Sistema unificado</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <style>
-        :root {
-            --bg-main: #121824;
-            --bg-card: #1c2333;
-            --bg-input: #252d3f;
-            --accent-orange: #f59e0b;
-            --accent-blue: #2563eb;
-            --accent-green: #10b981;
-            --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
-            --border-color: #334155;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AmailIA - Logística de Reparto</title>
+  <style>
+    /* --------------------------------------------------- */
+    /* 1. VARIABLES Y RESET                                */
+    /* --------------------------------------------------- */
+    :root {
+      --bg-main: #121824;
+      --bg-card: #1c2333;
+      --bg-input: #252d3f;
+      --color-accent-orange: #f59e0b;
+      --color-accent-blue: #2563eb;
+      --color-accent-green: #10b981;
+      --color-accent-red: #ef4444;
+      --color-gray: #334155;
+      --text-main: #ffffff;
+      --text-secondary: #94a3b8;
+      --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        body {
-            background-color: #0f172a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100dvh;
-        }
+    body {
+      background-color: #0f141e;
+      color: var(--text-main);
+      font-family: var(--font-family);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
 
-        /* Contenedor principal adaptativo */
-        .phone-container {
-            width: 100%;
-            max-width: 390px;
-            height: 100dvh; 
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+    /* --------------------------------------------------- */
+    /* 2. ESTRUCTURA ADAPTATIVA LÍQUIDA (SIMULADOR SMARTPHONE) */
+    /* --------------------------------------------------- */
+    .desktop-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-        @media (min-width: 400px) {
-            .phone-container {
-                height: 844px;
-                border-radius: 32px;
-                border: 8px solid #000;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            }
-        }
+    .phone-container {
+      position: relative;
+      width: 100%;
+      height: 100dvh; /* Critical for iOS Safari dynamic bars */
+      background-color: var(--bg-main);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: filter 0.3s ease;
+    }
 
-        /* Layout dividido */
-        .main-layout {
-            flex: 1;
-            display: flex;
-            position: relative;
-            height: 100%;
-        }
+    /* Filtro Visión Nocturna */
+    .phone-container.night-vision {
+      filter: sepia(100%) hue-rotate(315deg) saturate(300%) brightness(0.7);
+    }
 
-        .control-panel {
-            width: 85%;
-            height: 100%;
-            background-color: var(--bg-main);
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            z-index: 2;
-            box-shadow: 10px 0 20px rgba(0,0,0,0.4);
-            overflow-y: auto;
-        }
+    /* Simulación de Terminal para Desktop (>400px) */
+    @media (min-width: 401px) {
+      .phone-container {
+        width: 390px;
+        height: 844px;
+        border-radius: 32px;
+        border: 8px solid #000000;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+    }
 
-        .map-sidebar {
-            width: 15%;
-            height: 100%;
-            background: #1e293b;
-            background-image: radial-gradient(#334155 1px, transparent 0);
-            background-size: 8px 8px;
-            position: relative;
-        }
+    /* --------------------------------------------------- */
+    /* 3. LAYOUT DE PANTALLA DIVIDIDA (85% / 15%)          */
+    /* --------------------------------------------------- */
+    .layout-split {
+      display: flex;
+      flex-direction: row;
+      height: 100%;
+      width: 100%;
+    }
 
-        /* Cabecera */
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 4px;
-        }
-        .app-title-block h1 {
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-        .app-title-block span {
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+    /* PANEL IZQUIERDO (85%) */
+    .panel-izquierdo {
+      flex: 0 0 85%;
+      width: 85%;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      overflow-y: auto;
+      padding-bottom: 5rem; /* Espacio para el botón fijo */
+    }
 
-        .section-label {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 6px;
-        }
+    /* PANEL DERECHO (15%) */
+    .panel-derecho {
+      flex: 0 0 15%;
+      width: 15%;
+      background: radial-gradient(circle at center, #2e3d54 0%, #1e293b 100%);
+      border-left: 1px solid var(--color-gray);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding-bottom: 1.5rem;
+      gap: 1rem;
+    }
 
-        /* Selectores de municipio */
-        .terminos-container {
-            display: flex;
-            background-color: var(--bg-card);
-            padding: 4px;
-            border-radius: 12px;
-            gap: 4px;
-        }
+    /* --------------------------------------------------- */
+    /* 4. COMPONENTES DEL PANEL IZQUIERDO                  */
+    /* --------------------------------------------------- */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
 
-        .termino-btn {
-            flex: 1;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            padding: 10px 4px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+    .app-header img {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: var(--bg-card); /* Fallback si falta icono.png */
+      object-fit: cover;
+    }
 
-        .termino-btn.active {
-            background-color: var(--border-color);
-            color: var(--text-primary);
-        }
+    .header-titles {
+      flex-grow: 1;
+    }
 
-        .btn-action-orange {
-            background-color: var(--accent-orange);
-            color: #000;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            cursor: pointer;
-        }
+    .header-titles h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
 
-        /* Inputs y Formularios */
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
+    .header-titles span {
+      font-size: 0.75rem;
+      color: var(--color-accent-orange);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
 
-        .input-field {
-            background-color: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 14px;
-            color: var(--text-primary);
-            font-size: 14px;
-            outline: none;
-            width: 100%;
-            -webkit-appearance: none;
-        }
+    .btn-icon {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
 
-        select.input-field {
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 16px;
-            padding-right: 36px;
-        }
+    /* Selector de Término */
+    .term-selector {
+      display: flex;
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 0.25rem;
+      margin-bottom: 1.5rem;
+    }
 
-        .row-inputs {
-            display: flex;
-            gap: 12px;
-        }
+    .term-btn {
+      flex: 1;
+      padding: 0.5rem;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
 
-        .btn-insertar {
-            background-color: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            cursor: pointer;
-        }
+    .term-btn.active {
+      background: var(--color-gray);
+      color: var(--text-main);
+    }
 
-        /* Bloque de tramos ordenados */
-        .reparto-diario-block {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 140px;
-        }
+    /* Botones de Acción */
+    .btn-action {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
 
-        .tramos-lista {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 240px;
-            overflow-y: auto;
-        }
+    .btn-orange { background-color: var(--color-accent-orange); color: #000; }
+    .btn-blue { background-color: var(--color-accent-blue); }
+    
+    /* Botón final flotante */
+    .btn-green-fixed {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 85%;
+      padding: 1.25rem;
+      background-color: var(--color-accent-green);
+      color: #fff;
+      border: none;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      z-index: 10;
+    }
 
-        .tramo-item {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-        }
+    /* Formularios y Inputs (Reset iOS) */
+    .form-group {
+      margin-bottom: 1rem;
+    }
 
-        .tramo-item .remove-btn {
-            color: #ef4444;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-        }
+    .form-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
 
-        .no-tramos-msg {
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-style: italic;
-            text-align: center;
-            margin-top: 10px;
-        }
+    input, select {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      background-color: var(--bg-input);
+      border: 1px solid var(--color-gray);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 1rem;
+      -webkit-appearance: none; /* Anti-Safari Mobile */
+      appearance: none;
+    }
 
-        .btn-finalizar {
-            background-color: var(--accent-green);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: auto;
-        }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--color-accent-blue);
+    }
 
-        /* Controles flotantes barra derecha */
-        .map-controls {
-            position: absolute;
-            bottom: 24px;
-            right: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 5;
-        }
-        .map-btn {
-            width: 40px;
-            height: 40px;
-            background-color: var(--bg-card);
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: var(--text-primary);
-            cursor: pointer;
-            border: 1px solid var(--border-color);
-        }
+    select {
+      /* Base64 SVG Dropdown Arrow */
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      background-size: 1.2em;
+      padding-right: 2.5rem;
+    }
 
-        /* Panel Desplegable Ajustes */
-        .ajustes-panel {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 55%;
-            background-color: var(--bg-card);
-            border-top-left-radius: 24px;
-            border-top-right-radius: 24px;
-            box-shadow: 0 -10px 35px rgba(0,0,0,0.6);
-            z-index: 10;
-            padding: 22px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            border-top: 1px solid var(--border-color);
-        }
+    /* Orden de Reparto */
+    .orden-header {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--color-gray);
+      padding-bottom: 0.5rem;
+    }
 
-        .ajustes-panel.open {
-            transform: translateY(0);
-        }
+    .orden-contenedor {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
 
-        .ajustes-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .orden-empty {
+      font-style: italic;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
 
-        .ajustes-row {
-            background-color: var(--bg-main);
-            padding: 14px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid var(--border-color);
-        }
+    .tramo-item {
+      background: var(--bg-card);
+      border-left: 4px solid var(--color-accent-blue);
+      padding: 0.75rem;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-        /* Tarjeta de Estado Base de Datos */
-        .status-box-download {
-            background-color: var(--bg-main);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+    .tramo-info strong {
+      display: block;
+      font-size: 0.95rem;
+    }
 
-        .status-box-header { display: flex; justify-content: space-between; align-items: center; }
-        .status-badge { font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
-        .status-badge::before { content: ''; display: inline-block; width: 8px; height: 8px; background-color: currentColor; border-radius: 50%; }
-        
-        .size-badge {
-            background-color: #1e293b;
-            color: var(--text-secondary);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-family: monospace;
-            font-weight: 700;
-        }
+    .tramo-info span {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
 
-        .status-box-body { font-size: 13px; color: var(--text-secondary); }
-        .status-box-body strong { color: var(--text-primary); }
+    .btn-delete {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--color-accent-red);
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
 
-        .ajustes-actions-row { display: flex; gap: 12px; }
-        .btn-ajuste { flex: 1; padding: 14px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
-        .btn-ajuste-primary { background-color: var(--accent-blue); color: white; }
-        .btn-ajuste-danger { background-color: #521b1b; color: #f87171; }
-        
-        .btn-ota { 
-            background-color: var(--bg-main); 
-            color: var(--text-secondary); 
-            border: 1px solid var(--border-color); 
-            padding: 12px; 
-            border-radius: 8px; 
-            font-size: 12px; 
-            cursor: pointer; 
-            margin-top: auto; 
-        }
-    </style>
+    /* --------------------------------------------------- */
+    /* 5. COMPONENTES DEL PANEL DERECHO                    */
+    /* --------------------------------------------------- */
+    .map-btn {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--color-gray);
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--text-main);
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    /* --------------------------------------------------- */
+    /* 6. PANEL DESPLEGABLE DE AJUSTES (DRAWER MÓVIL)      */
+    /* --------------------------------------------------- */
+    .ajustes-panel {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 70%;
+      background: var(--bg-main);
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+    }
+
+    .ajustes-panel.open {
+      transform: translateY(0);
+    }
+
+    .drawer-handle {
+      width: 40px;
+      height: 5px;
+      background: var(--color-gray);
+      border-radius: 3px;
+      margin: 0 auto 1.5rem auto;
+    }
+
+    .ajustes-title {
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Toggle Switch */
+    .toggle-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: var(--bg-card);
+      border-radius: 12px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--color-gray);
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider { background-color: var(--color-accent-blue); }
+    input:checked + .slider:before { transform: translateX(24px); }
+
+    /* Tarjeta de Estado */
+    .status-card {
+      padding: 1rem;
+      border-radius: 12px;
+      border: 2px solid var(--color-accent-orange); /* Por defecto */
+      background: var(--bg-input);
+      margin-bottom: 1.5rem;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+
+    .status-card h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+    .status-card p { font-size: 0.85rem; color: var(--text-secondary); }
+
+    /* Botones Ajustes */
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--color-gray);
+      color: var(--text-main);
+      padding: 0.8rem;
+      border-radius: 8px;
+      width: 100%;
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+    }
+
+    .btn-danger {
+      border-color: var(--color-accent-red);
+      color: var(--color-accent-red);
+    }
+
+    .btn-decorative {
+      margin-top: auto;
+      background: transparent;
+      border: 1px dashed var(--color-gray);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      padding: 0.5rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+  </style>
 </head>
 <body>
 
-<div class="phone-container">
-    <div class="main-layout">
-        
-        <div class="control-panel">
-            <div class="app-header">
-                <div class="app-title-block">
-                    <h1>AmailIA</h1>
-                    <span>Ruta en Vivo</span>
-                </div>
-                <span class="material-icons" style="color: var(--text-secondary);">close</span>
+  <div class="desktop-wrapper">
+    <div class="phone-container" id="app-container">
+      
+      <div class="layout-split">
+        <div class="panel-izquierdo">
+          
+          <div class="app-header">
+            <img src="icono.png" alt="AmailIA Logo" onerror="this.style.display='none'">
+            <div class="header-titles">
+              <h1>AmailIA</h1>
+              <span>Ruta en Vivo</span>
             </div>
-
-            <div>
-                <p class="section-label">Término de Trabajo</p>
-                <div class="terminos-container">
-                    <button class="termino-btn active" onclick="ejecutarCambioTermino('Catarroja')">Catarroja</button>
-                    <button class="termino-btn" onclick="ejecutarCambioTermino('Albal')">Albal</button>
-                    <button class="termino-btn" onclick="ejecutarCambioTermino('Massanassa')">Massanassa</button>
-                </div>
-            </div>
-
-            <button class="btn-action-orange">
-                <span class="material-icons" style="font-size: 18px;">location_on</span>
-                Marcar posición exacta con el dedo
+            <button class="btn-icon" aria-label="Cerrar">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
+          </div>
 
-            <div class="form-group">
-                <p class="section-label">Calle</p>
-                <input type="text" class="input-field" id="ctx-input-calle" list="ctx-datalist-vias" placeholder="Escribe el nombre de la vía..." autocomplete="off">
-                <datalist id="ctx-datalist-vias"></datalist>
-            </div>
+          <div class="term-selector" id="term-selector">
+            <button class="term-btn active" data-term="Catarroja">Catarroja</button>
+            <button class="term-btn" data-term="Albal">Albal</button>
+            <button class="term-btn" data-term="Massanassa">Massanassa</button>
+          </div>
 
-            <div class="row-inputs">
-                <div class="form-group" style="flex: 1;">
-                    <p class="section-label">Inicio</p>
-                    <input type="text" id="ctx-input-portal" class="input-field" placeholder="Portal">
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <p class="section-label">Acera</p>
-                    <select id="ctx-select-acera" class="input-field">
-                        <option value="Ambas aceras">Ambas aceras</option>
-                        <option value="Pares">Pares</option>
-                        <option value="Impares">Impares</option>
-                    </select>
-                </div>
-            </div>
+          <button class="btn-action btn-orange">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            Marcar posición exacta con el dedo
+          </button>
 
-            <button class="btn-insertar" onclick="accionInsertarTramo()">
-                <span class="material-icons" style="font-size: 18px;">add</span> Insertar en la Jornada
-            </button>
+          <div class="form-group">
+            <input type="text" id="input-calle" list="calles-list" placeholder="Nombre de la Calle" autocomplete="off">
+            <datalist id="calles-list"></datalist>
+          </div>
 
-            <div class="reparto-diario-block">
-                <p class="section-label">Orden de Reparto Diario</p>
-                <div id="ctx-render-tramos" class="tramos-lista"></div>
-                <p id="ctx-fallback-vacio" class="no-tramos-msg">No hay tramos cargados en la jornada.</p>
-            </div>
+          <div class="form-row">
+            <input type="text" id="input-portal" placeholder="Inicio (Nº)" autocomplete="off" style="flex: 1;">
+            <select id="select-acera" style="flex: 1;">
+              <option value="Ambas aceras">Ambas aceras</option>
+              <option value="Pares">Pares</option>
+              <option value="Impares">Impares</option>
+            </select>
+          </div>
 
-            <button class="btn-finalizar" onclick="accionArchivarJornada()">Finalizar y Archivar Jornada</button>
+          <button class="btn-action btn-blue" onclick="insertarTramoJornada()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Insertar en la Jornada
+          </button>
+
+          <h2 class="orden-header">Orden de Reparto Diario</h2>
+          <div class="orden-contenedor" id="lista-tramos">
+            <div class="orden-empty" id="empty-state">No hay tramos cargados en la jornada.</div>
+          </div>
         </div>
 
-        <div class="map-sidebar">
-            <div class="map-controls">
-                <div class="map-btn"><span class="material-icons" style="font-size: 20px;">map</span></div>
-                <div class="map-btn" onclick="alternarDesplegableAjustes()"><span class="material-icons" style="font-size: 20px;">settings</span></div>
-            </div>
+        <div class="panel-derecho">
+          <button class="map-btn" aria-label="Mapa">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+          </button>
+          <button class="map-btn" onclick="toggleAjustes()" aria-label="Ajustes">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-green-fixed" onclick="finalizarJornada()">Finalizar y Archivar Jornada</button>
+
+      <div class="ajustes-panel" id="drawer-ajustes">
+        <div class="drawer-handle"></div>
+        <div class="ajustes-title">
+          <h2>Ajustes</h2>
+          <button class="btn-icon" onclick="toggleAjustes()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
         </div>
 
-        <div class="ajustes-panel" id="ctx-modulo-ajustes">
-            <div class="ajustes-header">
-                <h2>Ajustes</h2>
-                <span class="material-icons" style="cursor: pointer; font-size: 28px;" onclick="alternarDesplegableAjustes()">expand_more</span>
-            </div>
-
-            <div class="ajustes-row">
-                <span>Filtro Visión Nocturna</span>
-                <input type="checkbox" style="width: 18px; height: 18px; accent-color: var(--accent-blue);">
-            </div>
-
-            <div class="status-box-download" id="ctx-tarjeta-status">
-                <div class="status-box-header">
-                    <span class="status-badge" id="ctx-badge-titulo">SIN DATOS</span>
-                    <span class="size-badge" id="ctx-badge-peso">0.0 KB</span>
-                </div>
-                <div class="status-box-body">
-                    <p>término: <strong id="ctx-text-pueblo">Catarroja</strong></p>
-                    <p id="ctx-text-detalles">vías en memoria local: Sin calles en memoria local.</p>
-                </div>
-            </div>
-
-            <div class="ajustes-actions-row">
-                <button class="btn-ajuste btn-ajuste-primary" onclick="motorDescargaOverpass()">Actualizar base</button>
-                <button class="btn-ajuste btn-ajuste-danger" onclick="motorBorradoLocal()">Borrar datos</button>
-            </div>
-
-            <button class="btn-ota">Firmas HTTP OTA Versión</button>
+        <div class="toggle-container">
+          <span>Filtro Visión Nocturna</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="night-toggle" onchange="toggleNightVision()">
+            <span class="slider"></span>
+          </label>
         </div>
+
+        <div class="status-card" id="status-card">
+          <h3 id="status-term">Término: Catarroja</h3>
+          <p id="status-info">Estado: Comprobando base de datos...</p>
+        </div>
+
+        <button class="btn-outline" onclick="actualizarBaseOverpass()">Actualizar base</button>
+        <button class="btn-outline btn-danger" onclick="borrarDatosPueblo()">Borrar datos</button>
+
+        <div class="btn-decorative">Firmas HTTP OTA Versión 1.0.0</div>
+      </div>
 
     </div>
-</div>
+  </div>
 
-<script>
-    // Variables de entorno de la aplicación
-    let estadoMunicipio = "Catarroja";
-    let baseViasUrbana = [];
-    let listadoTramosJornada = [];
+  <script>
+    /* =====================================================================
+       MOTOR LÓGICO Y ARQUITECTURA (ES6+)
+       ===================================================================== */
 
-    // Cambiar de municipio limpiando e inicializando estados locales
-    function ejecutarCambioTermino(nombreMunicipio) {
-        if (estadoMunicipio === nombreMunicipio) return;
-        estadoMunicipio = nombreMunicipio;
+    // 1. GESTIÓN DE ESTADOS ATÓMICOS
+    let terminoActual = 'Catarroja';
+    let jornada = [];
+
+    // Referencias DOM
+    const DOM = {
+      termBtns: document.querySelectorAll('.term-btn'),
+      inputCalle: document.getElementById('input-calle'),
+      inputPortal: document.getElementById('input-portal'),
+      selectAcera: document.getElementById('select-acera'),
+      listaTramos: document.getElementById('lista-tramos'),
+      emptyState: document.getElementById('empty-state'),
+      datalist: document.getElementById('calles-list'),
+      drawer: document.getElementById('drawer-ajustes'),
+      statusCard: document.getElementById('status-card'),
+      statusTerm: document.getElementById('status-term'),
+      statusInfo: document.getElementById('status-info'),
+      appContainer: document.getElementById('app-container')
+    };
+
+    // Eventos Cambio de Término
+    DOM.termBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        // Limpiar inputs
+        DOM.inputCalle.value = '';
+        DOM.inputPortal.value = '';
         
-        // Sincronizar UI de botones superiores
-        document.querySelectorAll('.termino-btn').forEach(boton => {
-            if (boton.textContent.trim() === nombreMunicipio) {
-                boton.classList.add('active');
-            } else {
-                boton.classList.remove('active');
-            }
+        // Actualizar visualmente el botón
+        DOM.termBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        // Actualizar estado global y recargar datos locales
+        terminoActual = e.target.getAttribute('data-term');
+        cargarDatosLocales();
+      });
+    });
+
+    // 2. MOTOR DE CONSULTAS OVERPASS API
+    async function actualizarBaseOverpass() {
+      // Estado visual de carga (Naranja)
+      DOM.statusCard.style.borderColor = 'var(--color-accent-orange)';
+      DOM.statusInfo.innerText = 'Descargando datos...';
+      
+      const query = `
+        [out:json];
+        area["name"="${terminoActual}"]["admin_level"="8"]->.searchArea;
+        (
+          way["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary"](area.searchArea);
+        );
+        out tags;
+      `;
+      
+      const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Error en red");
+        
+        const data = await response.json();
+        const callesSet = new Set();
+        
+        // Filtrar y normalizar strings
+        data.elements.forEach(el => {
+          if (el.tags && el.tags.name) {
+            callesSet.add(el.tags.name.trim());
+          }
         });
 
-        // Limpieza de campos para evitar desbordamiento de tramos cruzados
-        document.getElementById("ctx-input-calle").value = "";
-        document.getElementById("ctx-input-portal").value = "";
+        // Ordenamiento alfabético en Español
+        const callesArray = Array.from(callesSet).sort((a, b) => a.localeCompare(b, 'es'));
         
-        sincronizarNucleoLocal();
-    }
-
-    // Motor Asíncrono de consulta Overpass API para descarga municipal masiva
-    async function motorDescargaOverpass() {
-        renderUIStatusCard("DESCARGANDO...", "Conectando con servidores OpenStreetMap...", "0.0 KB", "#f59e0b", "#1e1b4b");
-
-        const queryCompuesta = `[out:json][timeout:60];area["name"="${estadoMunicipio}"]["admin_level"=8]->.searchArea;(way["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary"](area.searchArea););out tags;`;
-        const endpoint = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(queryCompuesta)}`;
-
-        try {
-            const peticion = await fetch(endpoint);
-            if (!peticion.ok) throw new Error("Respuesta de pasarela inestable.");
-            
-            const cuerpo = await peticion.json();
-            let setLimpieza = new Set();
-            
-            if (cuerpo.elements && cuerpo.elements.length > 0) {
-                cuerpo.elements.forEach(el => {
-                    if (el.tags && el.tags.name) {
-                        setLimpieza.add(el.tags.name.trim());
-                    }
-                });
-            }
-
-            baseViasUrbana = Array.from(setLimpieza).sort((x, y) => x.localeCompare(y));
-            
-            if (baseViasUrbana.length === 0) {
-                throw new Error("El término de búsqueda no contiene calles válidas catalogadas.");
-            }
-
-            // Almacenar bajo identificadores puros e inmunes a pisado de datos
-            localStorage.setItem(`db_vias_${estadoMunicipio}`, JSON.stringify(baseViasUrbana));
-            inyectarSugerenciasDatalist();
-            
-            const dimensionBytes = new Blob([JSON.stringify(baseViasUrbana)]).size;
-            const dimensionKB = (dimensionBytes / 1024).toFixed(1);
-
-            renderUIStatusCard("DESCARGADO CORRECTAMENTE", `${baseViasViasUrbana = baseViasUrbana.length} calles registradas.`, `${dimensionKB} KB`, "#10b981", "#064e3b");
-            
-        } catch (err) {
-            console.error("Fallo crítico del motor:", err);
-            renderUIStatusCard("ERROR EN DESCARGA", "Error al procesar el callejero.", "0.0 KB", "#ef4444", "#450a0a");
-        }
-    }
-
-    // Sincronización y lectura de la persistencia local por término
-    function sincronizarNucleoLocal() {
-        document.getElementById("ctx-text-pueblo").textContent = estadoMunicipio;
-        const dumpDatos = localStorage.getItem(`db_vias_${estadoMunicipio}`);
+        // Persistencia
+        const jsonString = JSON.stringify(callesArray);
+        localStorage.setItem(`db_vias_${terminoActual}`, jsonString);
         
-        if (dumpDatos) {
-            baseViasUrbana = JSON.parse(dumpDatos);
-            inyectarSugerenciasDatalist();
-            const pesoKB = (new Blob([dumpDatos]).size / 1024).toFixed(1);
-            renderUIStatusCard("DESCARGADO CORRECTAMENTE", `${baseViasUrbana.length} calles registradas.`, `${pesoKB} KB`, "#10b981", "#064e3b");
-        } else {
-            baseViasUrbana = [];
-            inyectarSugerenciasDatalist();
-            renderUIStatusCard("SIN DATOS", "Sin calles en memoria local.", "0.0 KB", "#f59e0b", "#451a03");
-        }
+        cargarDatosLocales();
+
+      } catch (error) {
+        alert("Fallo al conectar con Overpass API. Inténtalo más tarde.");
+        DOM.statusInfo.innerText = 'Error en la descarga';
+        DOM.statusCard.style.borderColor = 'var(--color-accent-red)';
+      }
     }
 
-    // Rellenar dinámicamente las opciones del datalist para el input buscador
-    function inyectarSugerenciasDatalist() {
-        const datalist = document.getElementById("ctx-datalist-vias");
-        datalist.innerHTML = "";
-        baseViasUrbana.forEach(via => {
-            const itemElement = document.createElement("option");
-            itemElement.value = via;
-            datalist.appendChild(itemElement);
+    // 3. PERSISTENCIA AISLADA (OFFLINE-FIRST) Y DATALIST
+    function cargarDatosLocales() {
+      DOM.statusTerm.innerText = `Término: ${terminoActual}`;
+      const clave = `db_vias_${terminoActual}`;
+      const dataString = localStorage.getItem(clave);
+      
+      DOM.datalist.innerHTML = ''; // Limpiar datalist
+
+      if (dataString) {
+        const calles = JSON.parse(dataString);
+        
+        // Cálculo del peso exacto en memoria del dispositivo (KB = Bytes / 1024)
+        const sizeBytes = new Blob([dataString]).size;
+        const sizeKb = (sizeBytes / 1024).toFixed(2);
+        
+        // Rellenar Datalist dinámicamente
+        calles.forEach(calle => {
+          const option = document.createElement('option');
+          option.value = calle;
+          DOM.datalist.appendChild(option);
         });
+
+        // Actualizar tarjeta a Verde
+        DOM.statusCard.style.borderColor = 'var(--color-accent-green)';
+        DOM.statusInfo.innerText = `${calles.length} vías registradas (${sizeKb} KB)`;
+      } else {
+        // Actualizar tarjeta a Rojo/Naranja
+        DOM.statusCard.style.borderColor = 'var(--color-accent-orange)';
+        DOM.statusInfo.innerText = `SIN DATOS LOCALES`;
+      }
     }
 
-    // Insertar tramo de reparto en la vista diaria
-    function accionInsertarTramo() {
-        const inputCalle = document.getElementById("ctx-input-calle");
-        const inputPortal = document.getElementById("ctx-input-portal");
-        const selectAcera = document.getElementById("ctx-select-acera");
-
-        if (!inputCalle.value.trim()) {
-            alert("Selecciona o escribe una calle válida de la lista.");
-            return;
-        }
-
-        const modeloTramo = {
-            idUnico: Date.now(),
-            calle: inputCalle.value.trim(),
-            portal: inputPortal.value.trim() || 'S/N',
-            acera: selectAcera.value
-        };
-
-        listadoTramosJornada.push(modeloTramo);
-        
-        // Limpiar inputs dejando listos para la siguiente inserción rápida
-        inputCalle.value = "";
-        inputPortal.value = "";
-
-        refrescarLayoutListaReparto();
+    function borrarDatosPueblo() {
+      localStorage.removeItem(`db_vias_${terminoActual}`);
+      DOM.inputCalle.value = '';
+      cargarDatosLocales();
+      DOM.statusCard.style.borderColor = 'var(--color-accent-red)';
     }
 
-    function borrarTramoEspecifico(idTramo) {
-        listadoTramosJornada = listadoTramosJornada.filter(tramo => tramo.idUnico !== idTramo);
-        refrescarLayoutListaReparto();
+    // 4. FLUJO DEL LISTADO DE REPARTO
+    function insertarTramoJornada() {
+      const calle = DOM.inputCalle.value.trim();
+      let portal = DOM.inputPortal.value.trim();
+      const acera = DOM.selectAcera.value;
+
+      if (!calle) {
+        alert("Por favor, introduce el nombre de una calle.");
+        return;
+      }
+
+      if (!portal) portal = 'S/N';
+
+      const nuevoTramo = {
+        id: Date.now().toString(),
+        calle,
+        portal,
+        acera
+      };
+
+      jornada.push(nuevoTramo);
+      
+      // Limpieza post-inserción
+      DOM.inputCalle.value = '';
+      DOM.inputPortal.value = '';
+      DOM.selectAcera.selectedIndex = 0; // Reset a 'Ambas aceras'
+      
+      renderizarListado();
     }
 
-    // Pintar los elementos en el contenedor del reparto diario
-    function refrescarLayoutListaReparto() {
-        const cajaRender = document.getElementById("ctx-render-tramos");
-        const elementoVacio = document.getElementById("ctx-fallback-vacio");
-        
-        cajaRender.innerHTML = "";
-
-        if (listadoTramosJornada.length === 0) {
-            elementoVacio.style.display = "block";
-            return;
-        }
-
-        elementoVacio.style.display = "none";
-        listadoTramosJornada.forEach((tramo, indice) => {
-            const nodoHtml = document.createElement("div");
-            nodoHtml.className = "tramo-item";
-            nodoHtml.innerHTML = `
-                <div>
-                    <strong>${indice + 1}. ${tramo.calle}</strong> - Portal ${tramo.portal} (${tramo.acera})
-                </div>
-                <span class="remove-btn" onclick="borrarTramoEspecifico(${tramo.idUnico})">×</span>
-            `;
-            cajaRender.appendChild(nodoHtml);
-        });
+    function eliminarTramo(id) {
+      jornada = jornada.filter(tramo => tramo.id !== id);
+      renderizarListado();
     }
 
-    function accionArchivarJornada() {
-        if (listadoTramosJornada.length === 0) {
-            alert("No hay ningún elemento cargado en la jornada de hoy.");
-            return;
-        }
-        alert(`Jornada guardada con éxito. Archivados ${listadoTramosJornada.length} tramos.`);
-        listadoTramosJornada = [];
-        refrescarLayoutListaReparto();
+    function renderizarListado() {
+      if (jornada.length === 0) {
+        DOM.listaTramos.innerHTML = '<div class="orden-empty" id="empty-state">No hay tramos cargados en la jornada.</div>';
+        return;
+      }
+
+      DOM.listaTramos.innerHTML = '';
+      jornada.forEach((tramo, index) => {
+        const item = document.createElement('div');
+        item.className = 'tramo-item';
+        item.innerHTML = `
+          <div class="tramo-info">
+            <strong>${index + 1}. ${tramo.calle}</strong>
+            <span>Inicio: ${tramo.portal} | ${tramo.acera}</span>
+          </div>
+          <button class="btn-delete" onclick="eliminarTramo('${tramo.id}')">×</button>
+        `;
+        DOM.listaTramos.appendChild(item);
+      });
     }
 
-    function motorBorradoLocal() {
-        localStorage.removeItem(`db_vias_${estadoMunicipio}`);
-        baseViasUrbana = [];
-        inyectarSugerenciasDatalist();
-        renderUIStatusCard("DATOS BORRADOS", "0 calles registradas.", "0.0 KB", "#ef4444", "#450a0a");
+    function finalizarJornada() {
+      if (jornada.length === 0) {
+        alert("La jornada está vacía. No hay tramos para archivar.");
+        return;
+      }
+      alert(`Jornada finalizada.\nTotal tramos archivados: ${jornada.length}\n¡Buen trabajo!`);
+      jornada = [];
+      renderizarListado();
     }
 
-    // Control visual de la tarjeta de sincronización de datos
-    function renderUIStatusCard(titulo, subtexto, peso, colorHex, colorFondoBadge) {
-        const badge = document.getElementById("ctx-badge-titulo");
-        const badgePeso = document.getElementById("ctx-badge-peso");
-        const contenedor = document.getElementById("ctx-tarjeta-status");
-        
-        badge.textContent = titulo;
-        badge.style.color = colorHex;
-        
-        badgePeso.textContent = peso;
-        badgePeso.style.color = colorHex;
-        badgePeso.style.backgroundColor = colorFondoBadge;
-        
-        document.getElementById("ctx-text-detalles").textContent = `vías en memoria local: ${subtexto}`;
-        contenedor.style.borderColor = colorHex;
+    // 5. UTILIDADES (Drawer & Filtro)
+    function toggleAjustes() {
+      DOM.drawer.classList.toggle('open');
     }
 
-    function alternarDesplegableAjustes() {
-        document.getElementById("ctx-modulo-ajustes").classList.toggle("open");
+    function toggleNightVision() {
+      const isChecked = document.getElementById('night-toggle').checked;
+      if(isChecked) {
+        DOM.appContainer.classList.add('night-vision');
+      } else {
+        DOM.appContainer.classList.remove('night-vision');
+      }
     }
 
-    // Inicializar ciclo de vida de la vista
-    document.addEventListener("DOMContentLoaded", sincronizarNucleoLocal);
-</script>
+    // Inicialización
+    window.addEventListener('DOMContentLoaded', () => {
+      cargarDatosLocales();
+    });
+
+  </script>
 </body>
 </html>
