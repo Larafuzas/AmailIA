@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v5.0.1)</title>
+    <title>AmailIA - Optimización de Reparto (v5.1.0)</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -31,9 +31,23 @@
             filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
         }
         
-        /* Estilos para marcadores numéricos de la ruta */
+        /* Estilos para marcadores numéricos de la ruta activa */
         .route-idx-marker {
             background-color: #1e3a8a;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 800;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        /* Estilos para marcadores numéricos del histórico */
+        .history-idx-marker {
+            background-color: #dc2626;
             color: #ffffff;
             border: 2px solid #ffffff;
             border-radius: 50%;
@@ -54,10 +68,24 @@
 
     <div id="map" class="h-full w-full absolute inset-0 z-0"></div>
 
-    <button id="menuBtn" class="ios-safe-top absolute left-4 z-40 bg-white dark:bg-gray-800 p-3.5 rounded-xl shadow-xl flex items-center justify-center border border-gray-200 dark:border-gray-700 active:scale-95 transition-transform" aria-label="Abrir Menú">
+    <button id="menuBtn" class="ios-safe-top absolute left-4 z-40 bg-white dark:bg-gray-800 p-3.5 rounded-xl shadow-xl flex items-center justify-center border border-gray-200 dark:border-gray-700 active:scale-95 transition-transform" aria-label="Abrir Menú Reparto">
         <svg class="w-6 h-6 text-blue-900 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
+    </button>
+
+    <button id="settingsBtn" class="ios-safe-top absolute right-4 z-40 bg-white dark:bg-gray-800 p-3.5 rounded-xl shadow-xl flex items-center justify-center border border-gray-200 dark:border-gray-700 active:scale-95 transition-transform" aria-label="Abrir Ajustes">
+        <svg class="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.43l-1.003.767c-.3.23-.452.617-.432 1.004.004.074.006.147.006.22 0 .072-.002.146-.006.22-.02.387.13.773.432 1.003l1.003.767a1.125 1.125 0 0 1 .26 1.43l-1.297 2.247a1.125 1.125 0 0 1-1.37.49l-1.216-.456a1.125 1.125 0 0 0-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281a1.125 1.125 0 0 0-.646-.87a6.57 6.57 0 0 1-.22-.127a1.125 1.125 0 0 0-1.074-.124l-1.217.456a1.125 1.125 0 0 1-1.37-.49l-1.296-2.247a1.125 1.125 0 0 1 .26-1.43l1.003-.767c.301-.23.452-.617.432-1.004a6.58 6.58 0 0 1-.006-.22c0-.074.003-.147.006-.22.02-.387-.13-.773-.432-1.003l-1.003-.767a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.49l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128c.332-.183.582-.495.645-.869L9.594 3.94Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+    </button>
+
+    <button id="exitHistoryBtn" class="ios-safe-top absolute left-1/2 transform -translate-x-1/2 z-40 bg-red-600 text-white font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-2 border border-red-500 active:scale-95 transition-all hidden animate-bounce">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+        </svg>
+        <span class="text-xs tracking-wider uppercase">Salir del Histórico</span>
     </button>
 
     <div id="toastMapPicker" class="ios-safe-top absolute left-20 right-4 z-40 bg-blue-950 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-blue-800 transform -translate-y-32 opacity-0 transition-all duration-300 pointer-events-none">
@@ -71,30 +99,27 @@
     <div id="sidebarOverlay" class="absolute inset-0 bg-black/40 z-40 hidden opacity-0 transition-opacity duration-300"></div>
 
     <aside id="sidebar" class="custom-sidebar fixed inset-y-0 left-0 w-[85%] sm:w-[380px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-50 shadow-2xl flex flex-col justify-between transform -translate-x-full border-r border-gray-200 dark:border-gray-800">
-        
         <div class="p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
             <div class="flex items-center space-x-3">
                 <svg class="w-9 h-9 text-blue-900 dark:text-blue-500" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 15 L85 15 L85 85 L15 85 Z" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
                     <path d="M15 50 L85 50" stroke="currentColor" stroke-width="6" stroke-dasharray="2 4"/>
                     <path d="M50 15 L50 85" stroke="currentColor" stroke-width="6"/>
-                    <path d="M15 15 L85 85" stroke="currentColor" stroke-width="3"/>
                     <circle cx="50" cy="50" r="8" fill="currentColor"/>
                     <circle cx="15" cy="15" r="5" fill="#ef4444"/>
                     <circle cx="85" cy="85" r="5" fill="#22c55e"/>
                 </svg>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-blue-900 dark:text-white">AmailIA</h1>
-                    <p class="text-[10px] uppercase tracking-widest text-gray-500 dark:text-gray-400 font-bold">Horta Sud Logistics</p>
+                    <p class="text-[10px] uppercase tracking-widest text-gray-500 dark:text-gray-400 font-bold">Ruta Operativa en Vivo</p>
                 </div>
             </div>
-            <button id="closeSidebarBtn" class="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500">
+            <button onclick="closeAllSidebars()" class="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
 
         <div class="flex-1 overflow-y-auto p-5 space-y-5">
-            
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Municipio de Cobertura</label>
                 <div class="grid grid-cols-3 gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
@@ -106,10 +131,7 @@
 
             <div>
                 <button type="button" onclick="activateMapPickerMode()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 active:scale-[0.99] transition-transform">
-                    <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
-                    </svg>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
                     <span class="text-xs">Marcar punto con el dedo en el mapa</span>
                 </button>
                 <input type="hidden" id="customCoordsInput" value="">
@@ -121,10 +143,7 @@
                     <input type="text" id="streetInput" autocomplete="off" placeholder="Ej. Camí Reial" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-white" required>
                     
                     <div id="autocompleteLoading" class="absolute right-3 top-9 hidden">
-                        <svg class="animate-spin h-5 w-5 text-blue-900 dark:text-blue-400" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
+                        <svg class="animate-spin h-5 w-5 text-blue-900 dark:text-blue-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     </div>
                     <div id="autocompleteList" class="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-48 overflow-y-auto hidden z-50"></div>
                 </div>
@@ -152,9 +171,58 @@
 
             <hr class="border-gray-200 dark:border-gray-800">
 
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Tramos de la Ruta Actual</label>
+                <div id="liveRouteList" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    <p class="text-xs text-gray-400 italic text-center py-2">No hay tramos cargados en la jornada.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+            <button onclick="archiveCurrentJob()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3 px-4 rounded-xl shadow flex items-center justify-center space-x-2">
+                <span>Archivar Jornada en Historial</span>
+            </button>
+        </div>
+    </aside>
+
+
+    <aside id="sidebarSettings" class="custom-sidebar fixed inset-y-0 right-0 w-[85%] sm:w-[380px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-50 shadow-2xl flex flex-col justify-between transform translate-x-full border-l border-gray-200 dark:border-gray-800">
+        <div class="p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+            <div class="flex items-center space-x-2">
+                <svg class="w-6 h-6 text-blue-900 dark:text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white">Panel de Control</h2>
+            </div>
+            <button onclick="closeAllSidebars()" class="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5 space-y-6">
             <div class="space-y-3">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Ajustes del Sistema</label>
-                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Callejero Local (Caché Offline)</label>
+                <div class="p-3.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold dark:text-gray-300" id="dbStatusLabel">Municipio: Catarroja</span>
+                        <span id="dbSizeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 dark:text-gray-300">Vacío</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="downloadCallejeroOverpass()" class="text-xs bg-blue-900 hover:bg-blue-800 text-white p-2.5 rounded-lg font-semibold shadow-sm transition-colors">Descargar / Act.</button>
+                        <button onclick="clearCallejeroLocal()" class="text-xs bg-gray-200 dark:bg-gray-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 p-2.5 rounded-lg font-semibold transition-colors">Borrar Memoria</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Historial de Jornadas</label>
+                <div id="historyFilesContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <p class="text-xs text-gray-400 italic text-center py-2">No hay jornadas archivadas.</p>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Preferencia Visual</label>
+                <div class="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700">
                     <span class="text-sm font-semibold dark:text-gray-300 flex items-center space-x-2">
                         <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         <span>Visión Nocturna / Filtro Dark</span>
@@ -166,35 +234,22 @@
                 </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Tramos de la Ruta Actual</label>
-                <div id="liveRouteList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    <p class="text-xs text-gray-400 italic text-center py-2">No hay tramos cargados en la jornada.</p>
+            <div class="space-y-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Copia de Seguridad</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="triggerBackup()" class="text-xs bg-gray-100 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-2.5 rounded-lg font-bold border border-gray-200 dark:border-gray-700">Exportar (.JSON)</button>
+                    <button onclick="triggerRestore()" class="text-xs bg-gray-100 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-2.5 rounded-lg font-bold border border-gray-200 dark:border-gray-700">Importar Backup</button>
                 </div>
             </div>
-
         </div>
 
-        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 space-y-3">
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="triggerBackup()" class="text-xs bg-gray-200 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 p-2.5 rounded-lg font-bold flex items-center justify-center space-x-1">
-                    <span>Exportar (.JSON)</span>
-                </button>
-                <button onclick="triggerRestore()" class="text-xs bg-gray-200 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 p-2.5 rounded-lg font-bold flex items-center justify-center space-x-1">
-                    <span>Importar Backup</span>
-                </button>
-            </div>
-            
-            <button onclick="archiveCurrentJob()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow flex items-center justify-center space-x-2">
-                <span>Archivar Jornada en Historial</span>
-            </button>
-
-            <button onclick="checkUpdateOTA()" class="w-full bg-gray-950 dark:bg-gray-800 hover:bg-black dark:hover:bg-gray-700 text-white text-[11px] font-mono py-2.5 px-3 rounded-xl flex items-center justify-between border border-gray-800">
+        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+            <button onclick="checkUpdateOTA()" class="w-full bg-gray-950 dark:bg-gray-800 hover:bg-black dark:hover:bg-gray-700 text-white text-[11px] font-mono py-3 px-4 rounded-xl flex items-center justify-between border border-gray-800">
                 <span class="flex items-center space-x-1.5">
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     <span>Sincronización OTA</span>
                 </span>
-                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.0.1</span>
+                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.1.0</span>
             </button>
         </div>
     </aside>
@@ -202,9 +257,8 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "5.0.1";
+        const APP_VERSION = "5.1.0";
 
-        // Parámetros geográficos oficiales de los términos de trabajo en l'Horta Sud
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -214,9 +268,13 @@
         let currentMunicipality = 'catarroja';
         let map = null;
         let activeRouteData = []; 
+        let historyLayersGroup = null; // Capa temporal aislada para visualización de históricos
+        
+        // Capas en vivo
         let routeMarkersGroup = null;
         let routeLinesGroup = null;
         let detailPortalsGroup = null;
+        
         let isMapPickingModeActive = false;
         let autocompleteTimeout = null;
 
@@ -226,9 +284,10 @@
             setupUIEventListeners();
             loadStateFromLocalStorage();
             renderActiveRoute();
+            renderHistoryFileList();
+            updateCallejeroStatusUI();
         });
 
-        // Inicialización del motor interactivo de mapas
         function initLeafletMap() {
             const initConf = MUNICIPALITIES[currentMunicipality];
             
@@ -244,10 +303,11 @@
             routeMarkersGroup = L.layerGroup().addTo(map);
             routeLinesGroup = L.layerGroup().addTo(map);
             detailPortalsGroup = L.layerGroup().addTo(map);
+            historyLayersGroup = L.layerGroup().addTo(map);
 
-            // Escuchadores de zoom para evaluar la densidad de marcadores simulados
             map.on('zoomend', () => {
-                evaluateDetailPortalsVisibility();
+                // Solo renderizar microportales si no estamos visualizando un recorrido estático antiguo
+                if(historyLayersGroup.getLayers().length === 0) evaluateDetailPortalsVisibility();
             });
 
             map.on('click', function(e) {
@@ -257,15 +317,11 @@
         }
 
         function setupUIEventListeners() {
-            const menuBtn = document.getElementById("menuBtn");
-            const closeSidebarBtn = document.getElementById("closeSidebarBtn");
-            const sidebarOverlay = document.getElementById("sidebarOverlay");
-            const streetInput = document.getElementById("streetInput");
-
-            menuBtn.addEventListener("click", openSidebar);
-            closeSidebarBtn.addEventListener("click", closeSidebar);
-            sidebarOverlay.addEventListener("click", closeSidebar);
-            streetInput.addEventListener("input", handleStreetAutocomplete);
+            document.getElementById("menuBtn").addEventListener("click", () => openSidebar("sidebar"));
+            document.getElementById("settingsBtn").addEventListener("click", () => openSidebar("sidebarSettings"));
+            document.getElementById("sidebarOverlay").addEventListener("click", closeAllSidebars);
+            document.getElementById("streetInput").addEventListener("input", handleStreetAutocomplete);
+            document.getElementById("exitHistoryBtn").addEventListener("click", exitHistoryVisualizationMode);
             
             document.addEventListener("click", (e) => {
                 if (e.target.id !== "streetInput") {
@@ -274,25 +330,35 @@
             });
         }
 
-        function openSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const sidebarOverlay = document.getElementById("sidebarOverlay");
-            sidebar.classList.remove("-translate-x-full");
-            sidebarOverlay.classList.remove("hidden");
-            setTimeout(() => sidebarOverlay.classList.add("opacity-100"), 10);
+        function openSidebar(id) {
+            closeAllSidebars();
+            const target = document.getElementById(id);
+            const overlay = document.getElementById("sidebarOverlay");
+            
+            if(id === "sidebar") {
+                target.classList.remove("-translate-x-full");
+            } else {
+                target.classList.remove("translate-x-full");
+            }
+            overlay.classList.remove("hidden");
+            setTimeout(() => overlay.classList.add("opacity-100"), 10);
         }
 
-        function closeSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const sidebarOverlay = document.getElementById("sidebarOverlay");
-            sidebar.classList.add("-translate-x-full");
-            sidebarOverlay.classList.remove("opacity-100");
-            setTimeout(() => sidebarOverlay.classList.add("hidden"), 300);
+        function closeAllSidebars() {
+            const sidebarLeft = document.getElementById("sidebar");
+            const sidebarRight = document.getElementById("sidebarSettings");
+            const overlay = document.getElementById("sidebarOverlay");
+            
+            sidebarLeft.add("-translate-x-full" && sidebarLeft.classList.add("-translate-x-full"));
+            sidebarRight.classList.add("translate-x-full");
+            
+            overlay.classList.remove("opacity-100");
+            setTimeout(() => overlay.classList.add("hidden"), 300);
         }
 
         function activateMapPickerMode() {
             isMapPickingModeActive = true;
-            closeSidebar();
+            closeAllSidebars();
             document.getElementById("map").classList.add("map-picking-active");
             
             const toast = document.getElementById("toastMapPicker");
@@ -311,7 +377,7 @@
             document.getElementById("customCoordsInput").value = JSON.stringify([latlng.lat, latlng.lng]);
             document.getElementById("streetInput").value = "Punto marcado en Mapa";
             
-            openSidebar();
+            openSidebar("sidebar");
             document.getElementById("portalInput").focus();
         }
 
@@ -328,29 +394,37 @@
             activeTab.classList.remove("text-gray-600", "dark:text-gray-300");
             activeTab.classList.add("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
 
-            map.flyTo(MUNICIPALITIES[muniKey].coords, 15, {
-                animate: true,
-                duration: 1.2
-            });
+            map.flyTo(MUNICIPALITIES[muniKey].coords, 15, { animate: true, duration: 1.2 });
 
             document.getElementById("routeForm").reset();
             document.getElementById("customCoordsInput").value = "";
+            
+            updateCallejeroStatusUI();
         }
 
-        // Lógica de autocompletado en red con la API OpenStreetMap Nominatim
+        /* =====================================================================
+           MOTOR DE AUTOCOMPLETADO (HÍBRIDO: NOMINATIM ONLINE / CACHÉ OFFLINE)
+           ===================================================================== */
         function handleStreetAutocomplete(e) {
-            const query = e.target.value.trim();
+            const query = e.target.value.trim().toLowerCase();
             const listContainer = document.getElementById("autocompleteList");
             const loadingSpinner = document.getElementById("autocompleteLoading");
 
             clearTimeout(autocompleteTimeout);
 
-            if (query.length < 3 || query === "Punto marcado en Mapa") {
+            if (query.length < 3 || query === "punto marcado en mapa") {
                 listContainer.innerHTML = "";
                 listContainer.classList.add("hidden");
                 return;
             }
 
+            // CONTROL OFFLINE: Si no hay red, consume de forma reactiva el LocalStorage
+            if (!navigator.onLine) {
+                renderOfflineSuggestions(query, listContainer);
+                return;
+            }
+
+            // FLUJO ONLINE: Nominatim API
             autocompleteTimeout = setTimeout(async () => {
                 loadingSpinner.classList.remove("hidden");
                 try {
@@ -359,59 +433,233 @@
                     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(combinedQuery)}&addressdetails=1&limit=6`;
                     
                     const response = await fetch(url, { 
-                        headers: { 
-                            'Accept-Language': 'es',
-                            'User-Agent': 'AmailIA-Logistics-App'
-                        } 
+                        headers: { 'Accept-Language': 'es', 'User-Agent': 'AmailIA-Logistics-App' } 
                     });
                     const data = await response.json();
-
                     listContainer.innerHTML = "";
 
                     if (!data || data.length === 0) {
-                        listContainer.classList.add("hidden");
+                        // Fallback inmediato al motor offline local si Nominatim no devuelve resultados
+                        renderOfflineSuggestions(query, listContainer);
                         return;
                     }
 
                     const uniqueRoads = new Set();
-
                     data.forEach(item => {
                         const displayName = item.address.road || item.display_name.split(',')[0];
-                        
                         if (displayName && !uniqueRoads.has(displayName)) {
                             uniqueRoads.add(displayName);
-                            
-                            const row = document.createElement("div");
-                            row.className = "px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm cursor-pointer border-b border-gray-100 dark:border-gray-700 dark:text-gray-200";
-                            row.textContent = displayName;
-                            
-                            row.addEventListener("click", () => {
-                                document.getElementById("streetInput").value = displayName;
-                                document.getElementById("customCoordsInput").value = ""; 
-                                listContainer.classList.add("hidden");
-                            });
-                            listContainer.appendChild(row);
+                            injectAutocompleteRow(displayName, listContainer);
                         }
                     });
 
-                    if (uniqueRoads.size > 0) {
-                        listContainer.classList.remove("hidden");
-                    } else {
-                        listContainer.classList.add("hidden");
-                    }
-
+                    uniqueRoads.size > 0 ? listContainer.classList.remove("hidden") : listContainer.classList.add("hidden");
                 } catch (error) {
-                    console.error(error);
+                    renderOfflineSuggestions(query, listContainer);
                 } finally {
                     loadingSpinner.classList.add("hidden");
                 }
             }, 400);
         }
 
-        // Envío y procesamiento de tramos de la ruta
+        function renderOfflineSuggestions(query, container) {
+            container.innerHTML = "";
+            const localData = localStorage.getItem(`amailia_db_vias_${currentMunicipality}`);
+            if(!localData) {
+                container.classList.add("hidden");
+                return;
+            }
+            const calles = JSON.parse(localData);
+            const filtradas = calles.filter(c => c.toLowerCase().includes(query)).slice(0, 6);
+            
+            if(filtradas.length === 0) {
+                container.classList.add("hidden");
+                return;
+            }
+            filtradas.forEach(calle => injectAutocompleteRow(calle, container));
+            container.classList.remove("hidden");
+        }
+
+        function injectAutocompleteRow(text, container) {
+            const row = document.createElement("div");
+            row.className = "px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm cursor-pointer border-b border-gray-100 dark:border-gray-700 dark:text-gray-200 font-medium";
+            row.textContent = text;
+            row.addEventListener("click", () => {
+                document.getElementById("streetInput").value = text;
+                document.getElementById("customCoordsInput").value = ""; 
+                container.classList.add("hidden");
+            });
+            container.appendChild(row);
+        }
+
+        /* =====================================================================
+           GESTIÓN DEL CALLEJERO LOCAL (OVERPASS API)
+           ===================================================================== */
+        async function downloadCallejeroOverpass() {
+            if (!navigator.onLine) return alert("Se requiere conexión de datos activa para indexar el callejero.");
+            
+            const label = document.getElementById("dbSizeBadge");
+            label.textContent = "Descargando...";
+            label.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold";
+
+            const query = `[out:json];area["name"="${MUNICIPALITIES[currentMunicipality].name}"]["admin_level"="8"]->.searchArea;(way["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary"](area.searchArea););out tags;`;
+            const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("API Limit Error");
+                const data = await response.json();
+                const uniqueVias = new Set();
+                
+                data.elements.forEach(el => {
+                    if (el.tags && el.tags.name) uniqueVias.add(el.tags.name.trim());
+                });
+
+                const sortedVias = Array.from(uniqueVias).sort((a, b) => a.localeCompare(b, 'es'));
+                localStorage.setItem(`amailia_db_vias_${currentMunicipality}`, JSON.stringify(sortedVias));
+                
+                alert(`Indexación completada.\n${sortedVias.length} calles cacheadas con éxito para uso offline en ${MUNICIPALITIES[currentMunicipality].name}.`);
+                updateCallejeroStatusUI();
+            } catch (err) {
+                alert("Fallo en la descarga de Overpass. Límite de peticiones saturado.");
+                updateCallejeroStatusUI();
+            }
+        }
+
+        function clearCallejeroLocal() {
+            localStorage.removeItem(`amailia_db_vias_${currentMunicipality}`);
+            updateCallejeroStatusUI();
+        }
+
+        function updateCallejeroStatusUI() {
+            document.getElementById("dbStatusLabel").textContent = `Municipio: ${MUNICIPALITIES[currentMunicipality].name}`;
+            const localData = localStorage.getItem(`amailia_db_vias_${currentMunicipality}`);
+            const badge = document.getElementById("dbSizeBadge");
+            
+            if(localData) {
+                const arr = JSON.parse(localData);
+                const sizeKb = (new Blob([localData]).size / 1024).toFixed(1);
+                badge.textContent = `${arr.length} vías (${sizeKb} KB)`;
+                badge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-green-600 text-white font-bold";
+            } else {
+                badge.textContent = "Sin Datos";
+                badge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-red-600 text-white font-bold";
+            }
+        }
+
+        /* =====================================================================
+           VISUALIZADOR Y NAVEGACIÓN DEL HISTORIAL DE RECORRIDOS
+           ===================================================================== */
+        function renderHistoryFileList() {
+            const container = document.getElementById("historyFilesContainer");
+            container.innerHTML = "";
+            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+
+            if (history.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-2">No hay jornadas archivadas.</p>`;
+                return;
+            }
+
+            // Renderizar de más reciente a más antiguo
+            history.slice().reverse().forEach((job, revIndex) => {
+                const originalIndex = history.length - 1 - revIndex;
+                const dateObj = new Date(job.date);
+                const formattedDate = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const formattedTime = dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+                const card = document.createElement("div");
+                card.className = "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors";
+                card.innerHTML = `
+                    <div class="text-xs flex-1 cursor-pointer" onclick="viewHistoryOnMap(${originalIndex})">
+                        <p class="font-bold dark:text-white">📅 RUTA ${formattedDate}</p>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Archivado a las ${formattedTime} • ${job.data.length} tramos</p>
+                    </div>
+                    <button onclick="deleteHistoryJob(${originalIndex})" class="text-gray-400 hover:text-red-500 p-1 rounded ml-1 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function viewHistoryOnMap(index) {
+            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            const job = history[index];
+            if(!job || job.data.length === 0) return;
+
+            closeAllSidebars();
+            historyLayersGroup.clearLayers();
+
+            // Apagar temporalmente las capas interactivas de la jornada actual
+            map.removeLayer(routeMarkersGroup);
+            map.removeLayer(routeLinesGroup);
+            map.removeLayer(detailPortalsGroup);
+
+            const polylinePoints = [];
+
+            job.data.forEach((segment, idx) => {
+                polylinePoints.push(segment.coords);
+                const step = idx + 1;
+
+                const customIcon = L.divIcon({
+                    className: 'history-idx-marker',
+                    html: `<span>${step}</span>`, 
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
+                });
+
+                const marker = L.marker(segment.coords, { icon: customIcon })
+                    .bindPopup(`<b>[HISTÓRICO] Tramo #${step}</b><br>${segment.street}, Nº ${segment.portal}<br>Municipio: ${segment.municipality.toUpperCase()}`);
+                historyLayersGroup.addLayer(marker);
+            });
+
+            if (polylinePoints.length > 1) {
+                const polyline = L.polyline(polylinePoints, {
+                    color: '#dc2626', // Rojo Carmesí distintivo para diferenciar del azul vivo
+                    weight: 5,
+                    opacity: 0.9,
+                    lineJoin: 'round'
+                });
+                polyline.addTo(historyLayersGroup);
+            }
+
+            // Ajustar vista del mapa para encuadrar la ruta histórica completa
+            map.fitBounds(L.polyline(polylinePoints).getBounds(), { padding: [50, 50] });
+
+            // Mostrar botón superior de salida
+            document.getElementById("exitHistoryBtn").classList.remove("hidden");
+        }
+
+        function exitHistoryVisualizationMode() {
+            // Limpiar la capa estática del histórico
+            historyLayersGroup.clearLayers();
+
+            // Re-inyectar las capas de la ruta en vivo del día
+            map.addLayer(routeMarkersGroup);
+            map.addLayer(routeLinesGroup);
+            map.addLayer(detailPortalsGroup);
+
+            // Ocultar el botón flotante de retorno
+            document.getElementById("exitHistoryBtn").classList.add("hidden");
+            
+            // Re-enfocar vista al municipio seleccionado activo
+            map.panTo(MUNICIPALITIES[currentMunicipality].coords);
+            evaluateDetailPortalsVisibility();
+        }
+
+        function deleteHistoryJob(index) {
+            if(!confirm("¿Confirmas que deseas eliminar esta jornada del historial permanentemente?")) return;
+            let history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            history.splice(index, 1);
+            localStorage.setItem("amailia_history", JSON.stringify(history));
+            renderHistoryFileList();
+        }
+
+        /* =====================================================================
+           PROCESAMIENTO Y LÓGICA DE NEGOCIO ORIGINAL CONSOLIDADA
+           ===================================================================== */
         async function handleFormSubmit(event) {
             event.preventDefault();
-            
             const submitBtn = document.getElementById("submitBtn");
             const streetName = document.getElementById("streetInput").value.trim();
             const portalNum = parseInt(document.getElementById("portalInput").value);
@@ -445,7 +693,7 @@
             }
 
             if (!geoPoint) {
-                alert(`No se ha encontrado "${streetName}". Usa el botón naranja para marcarlo con el dedo.`);
+                alert(`No se ha encontrado geolocalización para "${streetName}". Usa el botón naranja para forzar la posición con el dedo.`);
                 submitBtn.disabled = false;
                 return;
             }
@@ -466,12 +714,11 @@
             document.getElementById("routeForm").reset();
             document.getElementById("customCoordsInput").value = "";
             submitBtn.disabled = false;
-            closeSidebar();
+            closeAllSidebars();
 
             map.panTo(geoPoint);
         }
 
-        // Cambiar prioridad / orden posicional del tramo
         function moveSegment(index, direction) {
             const targetIndex = index + direction;
             if (targetIndex < 0 || targetIndex >= activeRouteData.length) return;
@@ -484,7 +731,6 @@
             renderActiveRoute();
         }
 
-        // Renderizado visual y secuenciación sobre las capas del mapa
         function renderActiveRoute() {
             routeMarkersGroup.clearLayers();
             routeLinesGroup.clearLayers();
@@ -541,11 +787,7 @@
 
             if (polylinePoints.length > 1) {
                 const polyline = L.polyline(polylinePoints, {
-                    color: '#1e3a8a',
-                    weight: 4,
-                    opacity: 0.8,
-                    dashArray: '8, 12',
-                    lineJoin: 'round'
+                    color: '#1e3a8a', weight: 4, opacity: 0.8, dashArray: '8, 12', lineJoin: 'round'
                 });
                 polyline.addTo(routeLinesGroup);
             }
@@ -553,12 +795,10 @@
             evaluateDetailPortalsVisibility();
         }
 
-        // Generación de micro-portales simulados a nivel de manzana
         function generateMicroPortals(centerCoords, startPortal, sidewalkMode) {
             const numPortalsToSimulate = 6;
             for (let i = 0; i < numPortalsToSimulate; i++) {
                 let currentNum = startPortal + i;
-                
                 if (sidewalkMode === 'pares' && currentNum % 2 !== 0) continue;
                 if (sidewalkMode === 'impares' && currentNum % 2 === 0) continue;
 
@@ -567,11 +807,7 @@
                 const portalColor = (currentNum % 2 === 0) ? '#22c55e' : '#ef4444';
 
                 const circleMarker = L.circleMarker([centerCoords[0] + latShift, centerCoords[1] + lngShift], {
-                    radius: 6,
-                    fillColor: portalColor,
-                    color: '#ffffff',
-                    weight: 1.5,
-                    fillOpacity: 0.9
+                    radius: 6, fillColor: portalColor, color: '#ffffff', weight: 1.5, fillOpacity: 0.9
                 }).bindTooltip(`Portal ${currentNum}`, { permanent: false, direction: 'top' });
 
                 detailPortalsGroup.addLayer(circleMarker);
@@ -579,10 +815,13 @@
         }
 
         function evaluateDetailPortalsVisibility() {
-            if (map.getZoom() >= 17) {
-                if (!map.hasLayer(detailPortalsGroup)) map.addLayer(detailPortalsGroup);
-            } else {
-                if (map.hasLayer(detailPortalsGroup)) map.removeLayer(detailPortalsGroup);
+            // Evitar que aparezcan microportales si se visualiza el histórico
+            if(document.getElementById("exitHistoryBtn").classList.contains("hidden")) {
+                if (map.getZoom() >= 17) {
+                    if (!map.hasLayer(detailPortalsGroup)) map.addLayer(detailPortalsGroup);
+                } else {
+                    if (map.hasLayer(detailPortalsGroup)) map.removeLayer(detailPortalsGroup);
+                }
             }
         }
 
@@ -627,9 +866,12 @@
             let history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
             history.push({ date: new Date().toISOString(), data: activeRouteData });
             localStorage.setItem("amailia_history", JSON.stringify(history));
+            
             activeRouteData = [];
             saveStateToLocalStorage();
             renderActiveRoute();
+            renderHistoryFileList(); // Refrescar el visor del menú de ajustes automáticamente
+            closeAllSidebars();
             alert("Jornada guardada con éxito.");
         }
 
@@ -664,18 +906,19 @@
                         localStorage.setItem("amailia_history", JSON.stringify(importedData.history));
                         saveStateToLocalStorage();
                         renderActiveRoute();
+                        renderHistoryFileList();
+                        updateCallejeroStatusUI();
                         alert("Copia de seguridad restaurada.");
                     } else {
-                        alert("Formato inválido.");
+                        alert("Formato de archivo inválido.");
                     }
                 } catch (err) {
-                    alert("Error al importar.");
+                    alert("Error al importar el archivo JSON.");
                 }
             };
             reader.readAsText(file);
         }
 
-        // Control de actualización OTA mediante la validación de firmas de cabeceras HTTP
         async function checkUpdateOTA() {
             try {
                 const currentLoc = window.location.href.split('?')[0];
@@ -696,7 +939,7 @@
                     alert(`Sincronización OTA Correcta.\n\nTu terminal está al día con la versión de producción: v${APP_VERSION}.`);
                 }
             } catch (error) {
-                console.log(error);
+                alert("No se ha podido comprobar la firma OTA. Trabajando en local.");
             }
         }
     </script>
