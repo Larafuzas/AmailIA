@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v5.0.1)</title>
+    <title>AmailIA - Optimización de Reparto (v5.0.2)</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AmailIA">
     <meta name="theme-color" content="#1e3a8a">
+    
+    <link rel="apple-touch-icon" href="icono.jpg">
+    <link rel="icon" type="image/jpeg" href="icono.jpg">
 
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -26,12 +30,10 @@
             top: calc(12px + env(safe-area-inset-top, 0px)) !important;
         }
 
-        /* Filtro CSS para Modo Noche del Mapa */
         .dark-mode-map .leaflet-layer {
             filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
         }
         
-        /* Estilos para marcadores numéricos de la ruta */
         .route-idx-marker {
             background-color: #1e3a8a;
             color: #ffffff;
@@ -194,7 +196,7 @@
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     <span>Sincronización OTA</span>
                 </span>
-                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.0.1</span>
+                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.0.2</span>
             </button>
         </div>
     </aside>
@@ -202,7 +204,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "5.0.1";
+        const APP_VERSION = "5.0.2";
 
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
