@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AmailIA - Ruta en Vivo</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -11,7 +11,7 @@
             --bg-card: #1c2333;
             --bg-input: #252d3f;
             --accent-orange: #f59e0b;
-            --accent-blue: #1d4ed8;
+            --accent-blue: #2563eb;
             --accent-green: #10b981;
             --text-primary: #ffffff;
             --text-secondary: #94a3b8;
@@ -22,7 +22,8 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -31,45 +32,40 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            min-height: 100dvh; /* Evita descuadres en navegadores móviles */
         }
 
-        /* Contenedor del dispositivo móvil */
+        /* Contenedor adaptativo: móvil real o simulación en escritorio */
         .phone-container {
-            width: 390px;
-            height: 844px;
+            width: 100%;
+            max-width: 390px;
+            height: 100vh;
+            height: 100dvh; 
             background-color: var(--bg-main);
             color: var(--text-primary);
             position: relative;
             overflow: hidden;
-            border-radius: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            border: 8px solid #000;
             display: flex;
             flex-direction: column;
         }
 
-        /* Barra de estado superior */
-        .status-bar {
-            height: 40px;
-            padding: 0 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            font-weight: 600;
-            z-index: 10;
-            user-select: none;
+        @media (min-width: 400px) {
+            .phone-container {
+                height: 844px;
+                border-radius: 32px;
+                border: 8px solid #000;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            }
         }
 
-        /* Layout con división para el Mapa Oculto Lateral */
+        /* Contenido con reparto de espacio para el mapa de fondo */
         .main-layout {
             flex: 1;
             display: flex;
             position: relative;
-            height: calc(100% - 40px);
+            height: 100%;
         }
 
-        /* Panel de Control Principal (Captura 1) */
         .control-panel {
             width: 85%;
             height: 100%;
@@ -77,12 +73,12 @@
             padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
             z-index: 2;
             box-shadow: 10px 0 20px rgba(0,0,0,0.4);
+            overflow-y: auto;
         }
 
-        /* Simulación de mapa a la derecha */
         .map-sidebar {
             width: 15%;
             height: 100%;
@@ -92,11 +88,12 @@
             position: relative;
         }
 
-        /* Cabecera de la Aplicación */
+        /* Cabecera limpia sin duplicar reloj */
         .app-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 8px;
         }
         .app-title-block h1 {
             font-size: 24px;
@@ -114,17 +111,16 @@
             cursor: pointer;
         }
 
-        /* Etiquetas de Secciones */
         .section-label {
             font-size: 11px;
             font-weight: 700;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
-        /* Selectores de Término Municipal */
+        /* Selector de municipios interactivo */
         .terminos-container {
             display: flex;
             background-color: var(--bg-card);
@@ -143,7 +139,7 @@
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background-color 0.2s;
         }
 
         .termino-btn.active {
@@ -151,7 +147,6 @@
             color: var(--text-primary);
         }
 
-        /* Botón de Posicionamiento Manual */
         .btn-action-orange {
             background-color: var(--accent-orange);
             color: #000;
@@ -167,10 +162,10 @@
             cursor: pointer;
         }
 
-        /* Entradas de Datos */
         .form-group {
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         .input-field {
@@ -181,9 +176,22 @@
             color: var(--text-primary);
             font-size: 14px;
             outline: none;
+            width: 100%;
+            -webkit-appearance: none; /* Forzar estilo en iOS */
         }
         .input-field::placeholder {
             color: #57657a;
+        }
+
+        /* FIX: Selector select en iOS */
+        select.input-field {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 36px;
         }
 
         .row-inputs {
@@ -191,7 +199,6 @@
             gap: 12px;
         }
 
-        /* Botón Insertar */
         .btn-insertar {
             background-color: var(--accent-blue);
             color: white;
@@ -205,21 +212,47 @@
             justify-content: center;
             gap: 8px;
             cursor: pointer;
-            margin-top: 4px;
         }
 
-        /* Bloque del Listado Diario */
+        /* Contenedor dinámico del orden de reparto */
         .reparto-diario-block {
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-height: 120px;
         }
+
+        .tramos-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .tramo-item {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .tramo-item span.remove {
+            color: #ef4444;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
         .no-tramos-msg {
             color: var(--text-secondary);
             font-size: 13px;
             font-style: italic;
             text-align: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
         .btn-finalizar {
@@ -233,9 +266,9 @@
             cursor: pointer;
             width: 100%;
             margin-top: auto;
+            margin-bottom: 8px;
         }
 
-        /* Botonera Flotante del Mapa Oculto */
         .map-controls {
             position: absolute;
             bottom: 24px;
@@ -258,9 +291,7 @@
             border: 1px solid var(--border-color);
         }
 
-        /* ==========================================
-           PANEL DE AJUSTES INFERIOR (Captura 2)
-           ========================================== */
+        /* Panel de Ajustes */
         .ajustes-panel {
             position: absolute;
             bottom: 0;
@@ -289,14 +320,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 4px;
         }
-        .ajustes-header h2 {
-            font-size: 20px;
-            font-weight: 700;
-        }
+        .ajustes-header h2 { font-size: 20px; font-weight: 700; }
 
-        /* Filas de Configuración Estándar */
         .ajustes-row {
             background-color: var(--bg-main);
             padding: 14px;
@@ -306,11 +332,7 @@
             align-items: center;
             border: 1px solid var(--border-color);
         }
-        .ajustes-row span {
-            font-size: 14px;
-        }
 
-        /* Caja de Estado e Información de Almacenamiento */
         .status-box-download {
             background-color: var(--bg-main);
             border: 1px solid var(--accent-green);
@@ -319,32 +341,12 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            transition: border-color 0.2s ease;
         }
 
-        .status-box-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .status-badge {
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .status-badge::before {
-            content: '';
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background-color: currentColor;
-            border-radius: 50%;
-        }
-
+        .status-box-header { display: flex; justify-content: space-between; align-items: center; }
+        .status-badge { font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+        .status-badge::before { content: ''; display: inline-block; width: 8px; height: 8px; background-color: currentColor; border-radius: 50%; }
+        
         .size-badge {
             background-color: #064e3b;
             color: var(--accent-green);
@@ -353,69 +355,21 @@
             font-size: 11px;
             font-family: monospace;
             font-weight: 700;
-            transition: all 0.2s ease;
         }
 
-        .status-box-body {
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.4;
-        }
-        .status-box-body strong {
-            color: var(--text-primary);
-        }
+        .status-box-body { font-size: 13px; color: var(--text-secondary); }
+        .status-box-body strong { color: var(--text-primary); }
 
-        /* Botonera de Acciones */
-        .ajustes-actions-row {
-            display: flex;
-            gap: 12px;
-        }
-
-        .btn-ajuste {
-            flex: 1;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            text-align: center;
-        }
-
-        .btn-ajuste-primary {
-            background-color: var(--accent-blue);
-            color: white;
-        }
-        .btn-ajuste-danger {
-            background-color: #521b1b;
-            color: #f87171;
-        }
-
-        .btn-ota {
-            background-color: var(--bg-main);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            text-align: center;
-            margin-top: auto;
-        }
+        .ajustes-actions-row { display: flex; gap: 12px; }
+        .btn-ajuste { flex: 1; padding: 14px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-ajuste-primary { background-color: var(--accent-blue); color: white; }
+        .btn-ajuste-danger { background-color: #521b1b; color: #f87171; }
+        .btn-ota { background-color: var(--bg-main); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; font-size: 12px; cursor: pointer; margin-top: auto; }
     </style>
 </head>
 <body>
 
 <div class="phone-container">
-    <div class="status-bar">
-        <span id="reloj-display">00:00</span>
-        <div style="display: flex; gap: 6px; align-items: center;">
-            <span class="material-icons" style="font-size: 15px;">signal_cellular_alt</span>
-            <span class="material-icons" style="font-size: 15px;">wifi</span>
-            <span class="material-icons" style="font-size: 15px;">battery_full</span>
-        </div>
-    </div>
-
     <div class="main-layout">
         
         <div class="control-panel">
@@ -443,34 +397,36 @@
 
             <div class="form-group">
                 <p class="section-label">Calle</p>
-                <input type="text" class="input-field" id="input-busqueda-vias" placeholder="Escribe el nombre de la vía...">
+                <input type="text" class="input-field" id="input-busqueda-vias" list="lista-vias" placeholder="Escribe el nombre de la vía...">
+                <datalist id="lista-vias"></datalist>
             </div>
 
             <div class="row-inputs">
                 <div class="form-group" style="flex: 1;">
                     <p class="section-label">Inicio</p>
-                    <input type="text" class="input-field" placeholder="Portal">
+                    <input type="text" id="input-portal" class="input-field" placeholder="Portal">
                 </div>
                 <div class="form-group" style="flex: 1;">
                     <p class="section-label">Acera</p>
-                    <select class="input-field" style="appearance: none; padding-right: 10px;">
-                        <option>Ambas aceras</option>
-                        <option>Pares</option>
-                        <option>Impares</option>
+                    <select id="select-acera" class="input-field">
+                        <option value="Ambas aceras">Ambas aceras</option>
+                        <option value="Pares">Pares</option>
+                        <option value="Impares">Impares</option>
                     </select>
                 </div>
             </div>
 
-            <button class="btn-insertar">
+            <button class="btn-insertar" onclick="insertarTramoJornada()">
                 <span class="material-icons" style="font-size: 18px;">add</span> Insertar en la Jornada
             </button>
 
             <div class="reparto-diario-block">
                 <p class="section-label">Orden de Reparto Diario</p>
-                <p class="no-tramos-msg">No hay tramos cargados en la jornada.</p>
+                <div id="contenedor-lista-tramos" class="tramos-lista"></div>
+                <p id="msg-lista-vacia" class="no-tramos-msg">No hay tramos cargados en la jornada.</p>
             </div>
 
-            <button class="btn-finalizar">Finalizar y Archivar Jornada</button>
+            <button class="btn-finalizar" onclick="finalizarJornada()">Finalizar y Archivar Jornada</button>
         </div>
 
         <div class="map-sidebar">
@@ -514,18 +470,15 @@
 </div>
 
 <script>
-    // Variables de control de estado global
     let terminoActual = "Catarroja";
     let viasEnMemoria = [];
+    let tramosJornada = [];
 
-    // 1. SOLUCIÓN CORREGIDA: Sincronización completa al alternar pueblos
+    // Cambiar de municipio limpiando e indexando inputs
     function cambiarTerminoDeTrabajo(nuevoTermino) {
         if (terminoActual === nuevoTermino) return;
-        
         terminoActual = nuevoTermino;
-        console.log(`Pueblo seleccionado: ${terminoActual}`);
         
-        // Sincronizar visualmente los estados de los botones del Layout Principal
         document.querySelectorAll('.termino-btn').forEach(btn => {
             if (btn.textContent.trim() === nuevoTermino) {
                 btn.classList.add('active');
@@ -534,18 +487,15 @@
             }
         });
 
-        // Forzar recarga automática del almacenamiento correspondiente al pueblo seleccionado
+        // Limpiar campo de búsqueda al cambiar de pueblo
+        document.getElementById("input-busqueda-vias").value = "";
         cargarDatosMunicipales();
     }
 
-    // 2. SOLUCIÓN CORREGIDA: Extracción y limpieza exhaustiva (Overpass Engine)
+    // Descarga desde Overpass
     async function descargarCallesMunicipio() {
-        console.log(`Ejecutando petición de descarga masiva para: ${terminoActual}`);
-        
-        // Estado intermedio en la tarjeta visual
         actualizarUIAlmacenamiento("DESCARGANDO...", "Consultando pasarelas Overpass...", "0.0 KB", "#f59e0b", "#78350f");
 
-        // Consulta optimizada para capturar el total de vías urbanas dentro de los límites del municipio (admin_level=8)
         const queryOverpass = `
             [out:json][timeout:90];
             area["name"="${terminoActual}"]["admin_level"=8]->.searchArea;
@@ -559,12 +509,11 @@
 
         try {
             const respuesta = await fetch(endpointUrl);
-            if (!respuesta.ok) throw new Error("Fallo en la comunicación con los servidores de OpenStreetMap.");
+            if (!respuesta.ok) throw new Error("Fallo en la comunicación con OpenStreetMap.");
             
             const datosJSON = await respuesta.json();
             let listaCallesUnicas = new Set();
             
-            // Filtrar y normalizar nombres de calles evitando fragmentaciones duplicadas
             if (datosJSON.elements && datosJSON.elements.length > 0) {
                 datosJSON.elements.forEach(elemento => {
                     if (elemento.tags && elemento.tags.name) {
@@ -573,28 +522,14 @@
                 });
             }
 
-            // Transformar el Set en una lista indexada y alfabetizada
             viasEnMemoria = Array.from(listaCallesUnicas).sort((a, b) => a.localeCompare(b));
-            
-            if (viasEnMemoria.length === 0) {
-                throw new Error("La consulta retornó un índice vacío para este término municipal.");
-            }
+            if (viasEnMemoria.length === 0) throw new Error("No se encontraron calles.");
 
-            // Persistencia aislada e independiente en el almacenamiento del navegador
             localStorage.setItem(`vias_${terminoActual}`, JSON.stringify(viasEnMemoria));
+            renderizarDatalist();
             
-            // Cálculo del pesaje de los datos binarios almacenados
-            const bytesGuardados = new Blob([JSON.stringify(viasEnMemoria)]).size;
-            const kilobytesCalculados = (bytesGuardados / 1024).toFixed(1);
-
-            // Pintar confirmación con éxito y volumen real de datos
-            actualizarUIAlmacenamiento(
-                "DESCARGADO CORRECTAMENTE", 
-                `${viasEnMemoria.length} calles registradas.`, 
-                `${kilobytesCalculados} KB`, 
-                "#10b981", 
-                "#064e3b"
-            );
+            const bytes = new Blob([JSON.stringify(viasEnMemoria)]).size;
+            actualizarUIAlmacenamiento("DESCARGADO CORRECTAMENTE", `${viasEnMemoria.length} calles registradas.`, `${(bytes / 1024).toFixed(1)} KB`, "#10b981", "#064e3b");
             
         } catch (error) {
             console.error(error);
@@ -602,79 +537,126 @@
         }
     }
 
-    // 3. CARGA Y SINCRONIZACIÓN DE MEMORIA LOCAL
+    // Carga de calles en LocalStorage y actualización de sugerencias
     function cargarDatosMunicipales() {
-        // Vinculación del nombre del pueblo activo en el módulo de ajustes
         document.getElementById("lbl-nombre-pueblo").textContent = terminoActual;
-
         const persistenciaLocal = localStorage.getItem(`vias_${terminoActual}`);
         
         if (persistenciaLocal) {
             viasEnMemoria = JSON.parse(persistenciaLocal);
-            const kilobytesCalculados = (new Blob([persistenciaLocal]).size / 1024).toFixed(1);
-            
-            actualizarUIAlmacenamiento(
-                "DESCARGADO CORRECTAMENTE", 
-                `${viasEnMemoria.length} calles registradas.`, 
-                `${kilobytesCalculados} KB`, 
-                "#10b981", 
-                "#064e3b"
-            );
+            renderizarDatalist();
+            const kb = (new Blob([persistenciaLocal]).size / 1024).toFixed(1);
+            actualizarUIAlmacenamiento("DESCARGADO CORRECTAMENTE", `${viasEnMemoria.length} calles registradas.`, `${kb} KB`, "#10b981", "#064e3b");
         } else {
             viasEnMemoria = [];
+            renderizarDatalist();
             actualizarUIAlmacenamiento("SIN DATOS", "Sin calles en memoria local.", "0.0 KB", "#f59e0b", "#78350f");
         }
     }
 
-    // 4. LIMPIEZA DE ALMACENAMIENTO DEL MUNICIPIO SELECCIONADO
+    // Renderizar las opciones de autocompletado en el input
+    function renderizarDatalist() {
+        const datalist = document.getElementById("lista-vias");
+        datalist.innerHTML = "";
+        viasEnMemoria.forEach(calle => {
+            const option = document.createElement("option");
+            option.value = calle;
+            datalist.appendChild(option);
+        });
+    }
+
+    // FUNCIÓN: Insertar tramos reales en la lista de la jornada
+    function insertarTramoJornada() {
+        const calleElement = document.getElementById("input-busqueda-vias");
+        const portalElement = document.getElementById("input-portal");
+        const aceraElement = document.getElementById("select-acera");
+
+        if (!calleElement.value.trim()) {
+            alert("Por favor, escribe una calle válida.");
+            return;
+        }
+
+        const nuevoTramo = {
+            id: Date.now(),
+            calle: calleElement.value.trim(),
+            portal: portalElement.value.trim() || 'S/N',
+            acera: aceraElement.value
+        };
+
+        tramosJornada.push(nuevoTramo);
+        
+        // Resetear inputs menores
+        calleElement.value = "";
+        portalElement.value = "";
+
+        actualizarListaTramosUI();
+    }
+
+    function eliminarTramo(id) {
+        tramosJornada = tramosJornada.filter(t => t.id !== id);
+        actualizarListaTramosUI();
+    }
+
+    function actualizarListaTramosUI() {
+        const contenedor = document.getElementById("contenedor-lista-tramos");
+        const msgVacio = document.getElementById("msg-lista-vacia");
+        
+        contenedor.innerHTML = "";
+
+        if (tramosJornada.length === 0) {
+            msgVacio.style.display = "block";
+            return;
+        }
+
+        msgVacio.style.display = "none";
+        tramosJornada.forEach((tramo, index) => {
+            const item = document.createElement("div");
+            item.className = "tramo-item";
+            item.innerHTML = `
+                <div>
+                    <strong>${index + 1}. ${tramo.calle}</strong> - P. ${tramo.portal} (${tramo.acera})
+                </div>
+                <span class="remove" onclick="eliminarTramo(${tramo.id})">×</span>
+            `;
+            contenedor.appendChild(item);
+        });
+    }
+
+    function finalizarJornada() {
+        if(tramosJornada.length === 0) {
+            alert("No puedes archivar una jornada vacía.");
+            return;
+        }
+        alert(`Jornada archivada con ${tramosJornada.length} tramos registrados con éxito.`);
+        tramosJornada = [];
+        actualizarListaTramosUI();
+    }
+
     function eliminarCallesLocales() {
         localStorage.removeItem(`vias_${terminoActual}`);
         viasEnMemoria = [];
+        renderizarDatalist();
         actualizarUIAlmacenamiento("DATOS BORRADOS", "0 calles registradas.", "0.0 KB", "#ef4444", "#7f1d1d");
     }
 
-    // 5. MANIPULACIÓN VISUAL DEL DOM Y ESTILOS
     function actualizarUIAlmacenamiento(titulo, subtexto, tamano, colorHex, colorFondoBadge) {
-        const lblBadge = document.getElementById("lbl-estado-badge");
-        const lblTamano = document.getElementById("lbl-estado-tamano");
-        const lblDetalle = document.getElementById("lbl-conteo-detallado");
-        const contenedorTarjeta = document.getElementById("tarjeta-estado-contenedor");
-
-        if (lblBadge) {
-            lblBadge.textContent = titulo;
-            lblBadge.style.color = colorHex;
-        }
-        if (lblTamano) {
-            lblTamano.textContent = tamano;
-            lblTamano.style.color = colorHex;
-            lblTamano.style.backgroundColor = colorFondoBadge;
-        }
-        if (lblDetalle) lblDetalle.textContent = `vías en memoria local: ${subtexto}`;
-        if (contenedorTarjeta) contenedorTarjeta.style.borderColor = colorHex;
+        document.getElementById("lbl-estado-badge").textContent = titulo;
+        document.getElementById("lbl-estado-badge").style.color = colorHex;
+        
+        const txtTamano = document.getElementById("lbl-estado-tamano");
+        txtTamano.textContent = tamano;
+        txtTamano.style.color = colorHex;
+        txtTamano.style.backgroundColor = colorFondoBadge;
+        
+        document.getElementById("lbl-conteo-detallado").textContent = `vías en memoria local: ${subtexto}`;
+        document.getElementById("tarjeta-estado-contenedor").style.borderColor = colorHex;
     }
 
-    // Alternar visibilidad del Drawer/Panel de ajustes
     function alternarAjustes() {
         document.getElementById("panel-ajustes-modulo").classList.toggle("open");
     }
 
-    // Actualización automática del reloj de cabecera
-    function inicializarRelojDispositivo() {
-        const formatear = () => {
-            const date = new Date();
-            document.getElementById("reloj-display").textContent = 
-                String(date.getHours()).padStart(2, '0') + ":" + String(date.getMinutes()).padStart(2, '0');
-        };
-        formatear();
-        setInterval(formatear, 60000);
-    }
-
-    // Carga inicial al arrancar la ventana
-    document.addEventListener("DOMContentLoaded", () => {
-        cargarDatosMunicipales();
-        inicializarRelojDispositivo();
-    });
+    document.addEventListener("DOMContentLoaded", cargarDatosMunicipales);
 </script>
-
 </body>
 </html>
