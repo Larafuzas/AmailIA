@@ -26,14 +26,14 @@
         }
 
         body {
-            background-color: #f3f4f6;
+            background-color: #0f172a;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
         }
 
-        /* Contenedor simulador de dispositivo móvil */
+        /* Contenedor del dispositivo móvil */
         .phone-container {
             width: 390px;
             height: 844px;
@@ -42,13 +42,13 @@
             position: relative;
             overflow: hidden;
             border-radius: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
             border: 8px solid #000;
             display: flex;
             flex-direction: column;
         }
 
-        /* Barra de estado del teléfono */
+        /* Barra de estado superior */
         .status-bar {
             height: 40px;
             padding: 0 24px;
@@ -58,9 +58,10 @@
             font-size: 14px;
             font-weight: 600;
             z-index: 10;
+            user-select: none;
         }
 
-        /* Contenido Principal con división de Mapa Lateral */
+        /* Layout con división para el Mapa Oculto Lateral */
         .main-layout {
             flex: 1;
             display: flex;
@@ -68,7 +69,7 @@
             height: calc(100% - 40px);
         }
 
-        /* Panel de Control Izquierdo (Captura 1) */
+        /* Panel de Control Principal (Captura 1) */
         .control-panel {
             width: 85%;
             height: 100%;
@@ -78,20 +79,20 @@
             flex-direction: column;
             gap: 20px;
             z-index: 2;
-            box-shadow: 10px 0 20px rgba(0,0,0,0.3);
+            box-shadow: 10px 0 20px rgba(0,0,0,0.4);
         }
 
-        /* Vista de mapa de fondo a la derecha */
+        /* Simulación de mapa a la derecha */
         .map-sidebar {
             width: 15%;
             height: 100%;
-            background: #e5e7eb;
-            background-image: radial-gradient(var(--border-color) 1px, transparent 0);
-            background-size: 10px 10px;
+            background: #1e293b;
+            background-image: radial-gradient(#334155 1px, transparent 0);
+            background-size: 8px 8px;
             position: relative;
         }
 
-        /* Encabezado App */
+        /* Cabecera de la Aplicación */
         .app-header {
             display: flex;
             justify-content: space-between;
@@ -113,7 +114,7 @@
             cursor: pointer;
         }
 
-        /* Selectores de Término de Trabajo */
+        /* Etiquetas de Secciones */
         .section-label {
             font-size: 11px;
             font-weight: 700;
@@ -123,6 +124,7 @@
             margin-bottom: 8px;
         }
 
+        /* Selectores de Término Municipal */
         .terminos-container {
             display: flex;
             background-color: var(--bg-card);
@@ -149,7 +151,7 @@
             color: var(--text-primary);
         }
 
-        /* Botón de Acción Principal de Ubicación */
+        /* Botón de Posicionamiento Manual */
         .btn-action-orange {
             background-color: var(--accent-orange);
             color: #000;
@@ -157,7 +159,7 @@
             padding: 14px;
             border-radius: 12px;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 13px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -165,7 +167,7 @@
             cursor: pointer;
         }
 
-        /* Bloques de Formulario de Entrada */
+        /* Entradas de Datos */
         .form-group {
             display: flex;
             flex-direction: column;
@@ -189,7 +191,7 @@
             gap: 12px;
         }
 
-        /* Botones Base */
+        /* Botón Insertar */
         .btn-insertar {
             background-color: var(--accent-blue);
             color: white;
@@ -197,16 +199,16 @@
             padding: 14px;
             border-radius: 12px;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
             cursor: pointer;
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
-        /* Contenedor Inferior del Reparto Diario */
+        /* Bloque del Listado Diario */
         .reparto-diario-block {
             flex: 1;
             display: flex;
@@ -227,16 +229,16 @@
             padding: 14px;
             border-radius: 12px;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             cursor: pointer;
             width: 100%;
             margin-top: auto;
         }
 
-        /* Botones de control flotantes sobre el mapa lateral */
+        /* Botonera Flotante del Mapa Oculto */
         .map-controls {
             position: absolute;
-            bottom: 20px;
+            bottom: 24px;
             right: 12px;
             display: flex;
             flex-direction: column;
@@ -257,7 +259,7 @@
         }
 
         /* ==========================================
-           PANEL DESPLEGABLE DE AJUSTES (Captura 2)
+           PANEL DE AJUSTES INFERIOR (Captura 2)
            ========================================== */
         .ajustes-panel {
             position: absolute;
@@ -268,14 +270,14 @@
             background-color: var(--bg-card);
             border-top-left-radius: 24px;
             border-top-right-radius: 24px;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 -10px 35px rgba(0,0,0,0.6);
             z-index: 10;
-            padding: 20px;
+            padding: 22px;
             display: flex;
             flex-direction: column;
             gap: 16px;
             transform: translateY(100%);
-            transition: transform 0.3s ease-out;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             border-top: 1px solid var(--border-color);
         }
 
@@ -287,14 +289,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
         .ajustes-header h2 {
             font-size: 20px;
             font-weight: 700;
         }
 
-        /* Interruptor de Visión Nocturna */
+        /* Filas de Configuración Estándar */
         .ajustes-row {
             background-color: var(--bg-main);
             padding: 14px;
@@ -308,16 +310,16 @@
             font-size: 14px;
         }
 
-        /* Tarjeta de información de Descarga/Memoria */
+        /* Caja de Estado e Información de Almacenamiento */
         .status-box-download {
             background-color: var(--bg-main);
-            border: 1px solid #10b981; /* Verde por defecto */
+            border: 1px solid var(--accent-green);
             border-radius: 12px;
             padding: 16px;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            position: relative;
+            transition: border-color 0.2s ease;
         }
 
         .status-box-header {
@@ -327,7 +329,7 @@
         }
 
         .status-badge {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 800;
             letter-spacing: 0.5px;
             display: flex;
@@ -345,23 +347,25 @@
 
         .size-badge {
             background-color: #064e3b;
-            color: #10b981;
+            color: var(--accent-green);
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 11px;
             font-family: monospace;
             font-weight: 700;
+            transition: all 0.2s ease;
         }
 
         .status-box-body {
             font-size: 13px;
             color: var(--text-secondary);
+            line-height: 1.4;
         }
         .status-box-body strong {
             color: var(--text-primary);
         }
 
-        /* Botones de Ajustes */
+        /* Botonera de Acciones */
         .ajustes-actions-row {
             display: flex;
             gap: 12px;
@@ -369,8 +373,8 @@
 
         .btn-ajuste {
             flex: 1;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 10px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
@@ -383,8 +387,8 @@
             color: white;
         }
         .btn-ajuste-danger {
-            background-color: #7f1d1d;
-            color: #ef4444;
+            background-color: #521b1b;
+            color: #f87171;
         }
 
         .btn-ota {
@@ -393,7 +397,7 @@
             border: 1px solid var(--border-color);
             padding: 12px;
             border-radius: 8px;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             text-align: center;
             margin-top: auto;
@@ -404,15 +408,16 @@
 
 <div class="phone-container">
     <div class="status-bar">
-        <span id="reloj">23:31</span>
-        <div style="display: flex; gap: 5px; align-items: center;">
-            <span class="material-icons" style="font-size: 16px;">signal_cellular_alt</span>
-            <span class="material-icons" style="font-size: 16px;">wifi</span>
-            <span class="material-icons" style="font-size: 16px;">battery_full</span>
+        <span id="reloj-display">00:00</span>
+        <div style="display: flex; gap: 6px; align-items: center;">
+            <span class="material-icons" style="font-size: 15px;">signal_cellular_alt</span>
+            <span class="material-icons" style="font-size: 15px;">wifi</span>
+            <span class="material-icons" style="font-size: 15px;">battery_full</span>
         </div>
     </div>
 
     <div class="main-layout">
+        
         <div class="control-panel">
             <div class="app-header">
                 <div class="app-title-block">
@@ -432,13 +437,13 @@
             </div>
 
             <button class="btn-action-orange">
-                <span class="material-icons">location_on</span>
+                <span class="material-icons" style="font-size: 18px;">location_on</span>
                 Marcar posición exacta con el dedo
             </button>
 
             <div class="form-group">
                 <p class="section-label">Calle</p>
-                <input type="text" class="input-field" id="calle-input" placeholder="Escribe el nombre de la vía...">
+                <input type="text" class="input-field" id="input-busqueda-vias" placeholder="Escribe el nombre de la vía...">
             </div>
 
             <div class="row-inputs">
@@ -448,7 +453,7 @@
                 </div>
                 <div class="form-group" style="flex: 1;">
                     <p class="section-label">Acera</p>
-                    <select class="input-field" style="appearance: none;">
+                    <select class="input-field" style="appearance: none; padding-right: 10px;">
                         <option>Ambas aceras</option>
                         <option>Pares</option>
                         <option>Impares</option>
@@ -457,7 +462,7 @@
             </div>
 
             <button class="btn-insertar">
-                <span class="material-icons">add</span> Insertar en la Jornada
+                <span class="material-icons" style="font-size: 18px;">add</span> Insertar en la Jornada
             </button>
 
             <div class="reparto-diario-block">
@@ -470,15 +475,15 @@
 
         <div class="map-sidebar">
             <div class="map-controls">
-                <div class="map-btn"><span class="material-icons">map</span></div>
-                <div class="map-btn" onclick="alternarAjustesPanel()"><span class="material-icons">settings</span></div>
+                <div class="map-btn"><span class="material-icons" style="font-size: 20px;">map</span></div>
+                <div class="map-btn" onclick="alternarAjustes()"><span class="material-icons" style="font-size: 20px;">settings</span></div>
             </div>
         </div>
 
-        <div class="ajustes-panel" id="panel-ajustes">
+        <div class="ajustes-panel" id="panel-ajustes-modulo">
             <div class="ajustes-header">
                 <h2>Ajustes</h2>
-                <span class="material-icons" style="cursor: pointer;" onclick="alternarAjustesPanel()">expand_more</span>
+                <span class="material-icons" style="cursor: pointer; font-size: 28px;" onclick="alternarAjustes()">expand_more</span>
             </div>
 
             <div class="ajustes-row">
@@ -486,40 +491,41 @@
                 <input type="checkbox" style="width: 18px; height: 18px; accent-color: var(--accent-blue);">
             </div>
 
-            <div class="status-box-download" id="tarjeta-estado">
+            <div class="status-box-download" id="tarjeta-estado-contenedor">
                 <div class="status-box-header">
-                    <span class="status-badge" id="badge-titulo" style="color: #10b981;">DESCARGADO CORRECTAMENTE</span>
-                    <span class="size-badge" id="badge-tamano">0.0 KB</span>
+                    <span class="status-badge" id="lbl-estado-badge" style="color: var(--accent-green);">DESCARGADO CORRECTAMENTE</span>
+                    <span class="size-badge" id="lbl-estado-tamano">0.0 KB</span>
                 </div>
                 <div class="status-box-body">
-                    <p>término: <strong id="texto-termino-activo">Catarroja</strong></p>
-                    <p id="texto-conteo-vias">vías en memoria local: 0 calles registradas.</p>
+                    <p>término: <strong id="lbl-nombre-pueblo">Catarroja</strong></p>
+                    <p id="lbl-conteo-detallado">vías en memoria local: 0 calles registradas.</p>
                 </div>
             </div>
 
             <div class="ajustes-actions-row">
-                <button class="btn-ajuste btn-ajuste-primary" onclick="descargarTodoElMunicipio()">Actualizar base</button>
-                <button class="btn-ajuste btn-ajuste-danger" onclick="borrarDatosLocales()">Borrar datos</button>
+                <button class="btn-ajuste btn-ajuste-primary" onclick="descargarCallesMunicipio()">Actualizar base</button>
+                <button class="btn-ajuste btn-ajuste-danger" onclick="eliminarCallesLocales()">Borrar datos</button>
             </div>
 
             <button class="btn-ota">Firmas HTTP OTA Versión</button>
         </div>
+
     </div>
 </div>
 
 <script>
-    // Configuración Base de Gestión de Términos Municipales
+    // Variables de control de estado global
     let terminoActual = "Catarroja";
     let viasEnMemoria = [];
 
-    // 1. CONTROL DE NAVEGACIÓN Y CAMBIO DE MUNICIPIO (Solución Captura 1)
+    // 1. SOLUCIÓN CORREGIDA: Sincronización completa al alternar pueblos
     function cambiarTerminoDeTrabajo(nuevoTermino) {
         if (terminoActual === nuevoTermino) return;
         
         terminoActual = nuevoTermino;
-        console.log(`Término de trabajo cambiado a: ${terminoActual}`);
+        console.log(`Pueblo seleccionado: ${terminoActual}`);
         
-        // Sincronizar clases activas en los botones de la interfaz
+        // Sincronizar visualmente los estados de los botones del Layout Principal
         document.querySelectorAll('.termino-btn').forEach(btn => {
             if (btn.textContent.trim() === nuevoTermino) {
                 btn.classList.add('active');
@@ -528,18 +534,19 @@
             }
         });
 
-        // Refrescar y sincronizar de inmediato los datos del nuevo municipio seleccionado
-        cargarDatosLocalesDelTermino();
+        // Forzar recarga automática del almacenamiento correspondiente al pueblo seleccionado
+        cargarDatosMunicipales();
     }
 
-    // 2. DESCARGA COMPLETA MEDIANTE CONSULTA COMPUESTA DE OVERPASS (Solución Captura 2)
-    async function descargarTodoElMunicipio() {
-        console.log(`Iniciando descarga exhaustiva del término de: ${terminoActual}`);
-        actualizarUITarjeta("DESCARGANDO...", "Consultando pasarelas del municipio...", "0.0 KB", "#f59e0b");
+    // 2. SOLUCIÓN CORREGIDA: Extracción y limpieza exhaustiva (Overpass Engine)
+    async function descargarCallesMunicipio() {
+        console.log(`Ejecutando petición de descarga masiva para: ${terminoActual}`);
+        
+        // Estado intermedio en la tarjeta visual
+        actualizarUIAlmacenamiento("DESCARGANDO...", "Consultando pasarelas Overpass...", "0.0 KB", "#f59e0b", "#78350f");
 
-        // Consulta Overpass optimizada: Se extrae la delimitación del término mediante admin_level=8 
-        // y se capturan todas las geometrías de tipo 'way' que contengan atributos de callejero/vía urbana.
-        const query = `
+        // Consulta optimizada para capturar el total de vías urbanas dentro de los límites del municipio (admin_level=8)
+        const queryOverpass = `
             [out:json][timeout:90];
             area["name"="${terminoActual}"]["admin_level"=8]->.searchArea;
             (
@@ -548,116 +555,124 @@
             out tags;
         `;
         
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+        const endpointUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(queryOverpass)}`;
 
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Fallo en la comunicación con la pasarela Overpass.");
+            const respuesta = await fetch(endpointUrl);
+            if (!respuesta.ok) throw new Error("Fallo en la comunicación con los servidores de OpenStreetMap.");
             
-            const data = await response.json();
-            let callesSet = new Set();
+            const datosJSON = await respuesta.json();
+            let listaCallesUnicas = new Set();
             
-            // Recorremos los elementos filtrando cadenas vacías y limpiando duplicados estructurales
-            if (data.elements && data.elements.length > 0) {
-                data.elements.forEach(element => {
-                    if (element.tags && element.tags.name) {
-                        callesSet.add(element.tags.name.trim());
+            // Filtrar y normalizar nombres de calles evitando fragmentaciones duplicadas
+            if (datosJSON.elements && datosJSON.elements.length > 0) {
+                datosJSON.elements.forEach(elemento => {
+                    if (elemento.tags && elemento.tags.name) {
+                        listaCallesUnicas.add(elemento.tags.name.trim());
                     }
                 });
             }
 
-            // Convertir a estructura limpia y ordenada alfabéticamente
-            viasEnMemoria = Array.from(callesSet).sort((a, b) => a.localeCompare(b));
+            // Transformar el Set en una lista indexada y alfabetizada
+            viasEnMemoria = Array.from(listaCallesUnicas).sort((a, b) => a.localeCompare(b));
             
             if (viasEnMemoria.length === 0) {
-                throw new Error("La consulta retornó un índice vacío.");
+                throw new Error("La consulta retornó un índice vacío para este término municipal.");
             }
 
-            // Guardar en el almacenamiento del navegador asignándole clave única por municipio
+            // Persistencia aislada e independiente en el almacenamiento del navegador
             localStorage.setItem(`vias_${terminoActual}`, JSON.stringify(viasEnMemoria));
             
-            // Calcular tamaño real del JSON en memoria
-            const sizeInBytes = new Blob([JSON.stringify(viasEnMemoria)]).size;
-            const sizeInKB = (sizeInBytes / 1024).toFixed(1);
+            // Cálculo del pesaje de los datos binarios almacenados
+            const bytesGuardados = new Blob([JSON.stringify(viasEnMemoria)]).size;
+            const kilobytesCalculados = (bytesGuardados / 1024).toFixed(1);
 
-            // Refrescar tarjeta con datos consolidados
-            actualizarUITarjeta(
+            // Pintar confirmación con éxito y volumen real de datos
+            actualizarUIAlmacenamiento(
                 "DESCARGADO CORRECTAMENTE", 
                 `${viasEnMemoria.length} calles registradas.`, 
-                `${sizeInKB} KB`, 
-                "#10b981"
+                `${kilobytesCalculados} KB`, 
+                "#10b981", 
+                "#064e3b"
             );
             
         } catch (error) {
             console.error(error);
-            actualizarUITarjeta("ERROR EN DESCARGA", "Error al procesar calles.", "0.0 KB", "#ef4444");
+            actualizarUIAlmacenamiento("ERROR EN DESCARGA", "Error al procesar el callejero.", "0.0 KB", "#ef4444", "#7f1d1d");
         }
     }
 
-    // 3. RECUPERACIÓN E INDEXACIÓN DE MEMORIA LOCAL
-    function cargarDatosLocalesDelTermino() {
-        // Actualizar etiqueta del municipio activo en la tarjeta
-        document.getElementById("texto-termino-activo").textContent = terminoActual;
+    // 3. CARGA Y SINCRONIZACIÓN DE MEMORIA LOCAL
+    function cargarDatosMunicipales() {
+        // Vinculación del nombre del pueblo activo en el módulo de ajustes
+        document.getElementById("lbl-nombre-pueblo").textContent = terminoActual;
 
-        const datosGuardados = localStorage.getItem(`vias_${terminoActual}`);
+        const persistenciaLocal = localStorage.getItem(`vias_${terminoActual}`);
         
-        if (datosGuardados) {
-            viasEnMemoria = JSON.parse(datosGuardados);
-            const sizeInKB = (new Blob([datosGuardados]).size / 1024).toFixed(1);
+        if (persistenciaLocal) {
+            viasEnMemoria = JSON.parse(persistenciaLocal);
+            const kilobytesCalculados = (new Blob([persistenciaLocal]).size / 1024).toFixed(1);
             
-            actualizarUITarjeta(
+            actualizarUIAlmacenamiento(
                 "DESCARGADO CORRECTAMENTE", 
                 `${viasEnMemoria.length} calles registradas.`, 
-                `${sizeInKB} KB`, 
-                "#10b981"
+                `${kilobytesCalculados} KB`, 
+                "#10b981", 
+                "#064e3b"
             );
         } else {
             viasEnMemoria = [];
-            actualizarUITarjeta("SIN DATOS", "Sin calles en memoria local.", "0.0 KB", "#f59e0b");
+            actualizarUIAlmacenamiento("SIN DATOS", "Sin calles en memoria local.", "0.0 KB", "#f59e0b", "#78350f");
         }
     }
 
-    // 4. LIMPIEZA DEL MAPA LOCAL DE CALLES
-    function borrarDatosLocales() {
+    // 4. LIMPIEZA DE ALMACENAMIENTO DEL MUNICIPIO SELECCIONADO
+    function eliminarCallesLocales() {
         localStorage.removeItem(`vias_${terminoActual}`);
         viasEnMemoria = [];
-        actualizarUITarjeta("DATOS BORRADOS", "0 calles registradas.", "0.0 KB", "#ef4444");
+        actualizarUIAlmacenamiento("DATOS BORRADOS", "0 calles registradas.", "0.0 KB", "#ef4444", "#7f1d1d");
     }
 
-    // 5. MANIPULACIÓN DEL ÁRBOL DOM Y ESTILOS DINÁMICOS
-    function actualizarUITarjeta(titulo, subtexto, tamano, colorHex) {
-        const badgeTitulo = document.getElementById("badge-titulo");
-        const badgeTamano = document.getElementById("badge-tamano");
-        const textoConteo = document.getElementById("texto-conteo-vias");
-        const tarjeta = document.getElementById("tarjeta-estado");
+    // 5. MANIPULACIÓN VISUAL DEL DOM Y ESTILOS
+    function actualizarUIAlmacenamiento(titulo, subtexto, tamano, colorHex, colorFondoBadge) {
+        const lblBadge = document.getElementById("lbl-estado-badge");
+        const lblTamano = document.getElementById("lbl-estado-tamano");
+        const lblDetalle = document.getElementById("lbl-conteo-detallado");
+        const contenedorTarjeta = document.getElementById("tarjeta-estado-contenedor");
 
-        if (badgeTitulo) {
-            badgeTitulo.textContent = titulo;
-            badgeTitulo.style.color = colorHex;
+        if (lblBadge) {
+            lblBadge.textContent = titulo;
+            lblBadge.style.color = colorHex;
         }
-        if (badgeTamano) badgeTamano.textContent = tamano;
-        if (textoConteo) textoConteo.textContent = `vías en memoria local: ${subtexto}`;
-        if (tarjeta) tarjeta.style.borderColor = colorHex;
+        if (lblTamano) {
+            lblTamano.textContent = tamano;
+            lblTamano.style.color = colorHex;
+            lblTamano.style.backgroundColor = colorFondoBadge;
+        }
+        if (lblDetalle) lblDetalle.textContent = `vías en memoria local: ${subtexto}`;
+        if (contenedorTarjeta) contenedorTarjeta.style.borderColor = colorHex;
     }
 
-    // Alternar visibilidad de la sección de ajustes (simulando interacción móvil)
-    function alternarAjustesPanel() {
-        document.getElementById("panel-ajustes").classList.toggle("open");
+    // Alternar visibilidad del Drawer/Panel de ajustes
+    function alternarAjustes() {
+        document.getElementById("panel-ajustes-modulo").classList.toggle("open");
     }
 
-    // Actualización del reloj nativo
-    function actualizarReloj() {
-        const ahora = new Date();
-        const horas = String(ahora.getHours()).padStart(2, '0');
-        const minutos = String(ahora.getMinutes()).padStart(2, '0');
-        document.getElementById("reloj").textContent = `${horas}:${minutos}`;
+    // Actualización automática del reloj de cabecera
+    function inicializarRelojDispositivo() {
+        const formatear = () => {
+            const date = new Date();
+            document.getElementById("reloj-display").textContent = 
+                String(date.getHours()).padStart(2, '0') + ":" + String(date.getMinutes()).padStart(2, '0');
+        };
+        formatear();
+        setInterval(formatear, 60000);
     }
 
-    // Inicialización del motor en la carga del documento
+    // Carga inicial al arrancar la ventana
     document.addEventListener("DOMContentLoaded", () => {
-        cargarDatosLocalesDelTermino();
-        actualizarReloj();
-        setInterval(actualizarReloj, 60000);
+        cargarDatosMunicipales();
+        inicializarRelojDispositivo();
     });
 </script>
 
