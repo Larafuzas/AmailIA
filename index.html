@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v5.1.2)</title>
+    <title>AmailIA - Optimización de Reparto (v5.2.0)</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -76,7 +76,7 @@
 
     <button id="settingsBtn" class="ios-safe-top absolute right-4 z-40 bg-white dark:bg-gray-800 p-3.5 rounded-xl shadow-xl flex items-center justify-center border border-gray-200 dark:border-gray-700 active:scale-95 transition-transform" aria-label="Abrir Ajustes">
         <svg class="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.43l-1.003.767c-.3.23-.452.617-.432 1.004.004.074.006.147.006.22 0 .072-.002.146-.006.22-.02.387.13.773.432 1.003l1.003.767a1.125 1.125 0 0 1 .26 1.43l-1.297 2.247a1.125 1.125 0 0 1-1.37.49l-1.216-.456a1.125 1.125 0 0 0-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281a1.125 1.125 0 0 0-.646-.87a6.57 6.57 0 0 1-.22-.127a1.125 1.125 0 0 0-1.074-.124l-1.217.456a1.125 1.125 0 0 1-1.37-.49l-1.296-2.247a1.125 1.125 0 0 1 .26-1.43l1.003-.767c.301-.23.452.617./432-1.004a6.58 6.58 0 0 1-.006-.22c0-.074.003-.147.006-.22.02-.387-.13-.773-.432-1.003l-1.003-.767a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.49l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128c.332-.183.582-.495.645-.869L9.594 3.94Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.43l-1.003.767c-.3.23-.452.617-.432 1.004.004.074.006.147.006.22 0 .072-.002.146-.006.22-.02.387.13.773.432 1.003l1.003.767a1.125 1.125 0 0 1 .26 1.43l-1.297 2.247a1.125 1.125 0 0 1-1.37.49l-1.216-.456a1.125 1.125 0 0 0-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281a1.125 1.125 0 0 0-.646-.87a6.57 6.57 0 0 1-.22-.127a1.125 1.125 0 0 0-1.074-.124l-1.217.456a1.125 1.125 0 0 1-1.37-.49l-1.296-2.247a1.125 1.125 0 0 1 .26-1.43l1.003-.767c.301-.23.452-.617-.432-1.004a6.58 6.58 0 0 1-.006-.22c0-.074.003-.147.006-.22.02-.387-.13-.773-.432-1.003l-1.003-.767a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.49l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128c.332-.183.582-.495.645-.869L9.594 3.94Z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
         </svg>
     </button>
@@ -165,7 +165,13 @@
             <hr class="border-gray-200 dark:border-gray-800">
 
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Tramos de la Ruta Actual</label>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tramos de la Ruta Actual</label>
+                    <button onclick="syncPendingCoordinates()" id="syncQueueBtn" class="hidden text-[11px] bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-2 py-1 rounded-lg flex items-center space-x-1 transition-all">
+                        <svg class="w-3 h-3 animate-pulse" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                        <span>Sincronizar Plano</span>
+                    </button>
+                </div>
                 <div id="liveRouteList" class="space-y-2 max-h-64 overflow-y-auto pr-1">
                     <p class="text-xs text-gray-400 italic text-center py-2">No hay tramos cargados en la jornada.</p>
                 </div>
@@ -242,7 +248,7 @@
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     <span>Sincronización OTA</span>
                 </span>
-                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.1.2</span>
+                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.2.0</span>
             </button>
         </div>
     </aside>
@@ -250,7 +256,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "5.1.2";
+        const APP_VERSION = "5.2.0";
 
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
@@ -278,6 +284,9 @@
             renderActiveRoute();
             renderHistoryFileList();
             updateCallejeroStatusUI();
+
+            // Escuchar cambios de conectividad para auto-sincronizar tramos pendientes
+            window.addEventListener('online', syncPendingCoordinates);
         });
 
         function initLeafletMap() {
@@ -574,7 +583,10 @@
 
             const polylinePoints = [];
 
-            job.data.forEach((segment, idx) => {
+            // Filtrar solo los tramos que sí tengan coordenadas válidas
+            const validSegments = job.data.filter(s => s.coords && s.coords.length === 2);
+
+            validSegments.forEach((segment, idx) => {
                 polylinePoints.push(segment.coords);
                 const step = idx + 1;
 
@@ -600,7 +612,9 @@
                 polyline.addTo(historyLayersGroup);
             }
 
-            map.fitBounds(L.polyline(polylinePoints).getBounds(), { padding: [50, 50] });
+            if(polylinePoints.length > 0) {
+                map.fitBounds(L.polyline(polylinePoints).getBounds(), { padding: [50, 50] });
+            }
             document.getElementById("exitHistoryBtn").classList.remove("hidden");
         }
 
@@ -624,6 +638,9 @@
             renderHistoryFileList();
         }
 
+        /* =====================================================================
+           FLUJO DE INSERCIÓN CON GEOLOCALIZACIÓN DIFERIDA (LAZY OFFLINE)
+           ===================================================================== */
         async function handleFormSubmit(event) {
             event.preventDefault();
             const submitBtn = document.getElementById("submitBtn");
@@ -633,11 +650,13 @@
             const customCoordsRaw = document.getElementById("customCoordsInput").value;
 
             let geoPoint = null;
+            let isPendingSync = false;
             submitBtn.disabled = true;
 
             if (customCoordsRaw) {
                 geoPoint = JSON.parse(customCoordsRaw);
-            } else {
+            } else if (navigator.onLine) {
+                // Modo con Cobertura: Intentar consulta online normal
                 try {
                     const targetMuni = MUNICIPALITIES[currentMunicipality].name;
                     const searchQueries = [
@@ -654,14 +673,15 @@
                         }
                     }
                 } catch (err) {
-                    console.error(err);
+                    console.error("Fallo asíncrono en Nominatim, conmutando a inserción offline estática.");
                 }
             }
 
+            // MEJORA CRÍTICA: Si no hay red o Nominatim falla, se procesa el tramo igualmente en local
             if (!geoPoint) {
-                alert(`No se ha encontrado geolocalización para "${streetName}". Usa el botón naranja para marcar el punto sobre el plano.`);
-                submitBtn.disabled = false;
-                return;
+                isPendingSync = true;
+                // Usamos las coordenadas base del pueblo para que no rompa el tipado de Leaflet inicialmente
+                geoPoint = [...MUNICIPALITIES[currentMunicipality].coords];
             }
 
             const routeSegment = {
@@ -670,7 +690,8 @@
                 street: streetName,
                 portal: portalNum,
                 sidewalk: sidewalk,
-                coords: geoPoint
+                coords: geoPoint,
+                pendingSync: isPendingSync // Bandera de control técnico
             };
 
             activeRouteData.push(routeSegment);
@@ -682,7 +703,45 @@
             submitBtn.disabled = false;
             closeAllSidebars();
 
-            map.panTo(geoPoint);
+            if (!isPendingSync) {
+                map.panTo(geoPoint);
+            } else {
+                // Intentar disparar una sincronización silenciosa por si fue un microcorte de la API
+                syncPendingCoordinates();
+            }
+        }
+
+        // MOTOR DE BACKGROUND SYNC: Resuelve las coordenadas pendientes al recuperar cobertura
+        async function syncPendingCoordinates() {
+            if (!navigator.onLine) return;
+
+            let recordsChanged = false;
+            const syncBtn = document.getElementById("syncQueueBtn");
+
+            for (let segment of activeRouteData) {
+                if (segment.pendingSync) {
+                    try {
+                        const targetMuni = MUNICIPALITIES[segment.municipality].name;
+                        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(segment.street)}+${segment.portal},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`;
+                        
+                        const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
+                        const data = await res.json();
+                        
+                        if (data && data.length > 0) {
+                            segment.coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                            segment.pendingSync = false;
+                            recordsChanged = true;
+                        }
+                    } catch (err) {
+                        console.warn(`Reintento fallido en ruta para: ${segment.street}`);
+                    }
+                }
+            }
+
+            if (recordsChanged) {
+                saveStateToLocalStorage();
+                renderActiveRoute();
+            }
         }
 
         function moveSegment(index, direction) {
@@ -707,33 +766,53 @@
 
             if (activeRouteData.length === 0) {
                 listContainer.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-2">No hay tramos cargados en la jornada.</p>`;
+                document.getElementById("syncQueueBtn").classList.add("hidden");
                 return;
             }
 
             const polylinePoints = [];
+            let pendingSyncCount = 0;
 
             activeRouteData.forEach((segment, index) => {
                 const stepNumber = index + 1;
-                polylinePoints.push(segment.coords);
+                
+                if (segment.pendingSync) pendingSyncCount++;
 
-                const customIcon = L.divIcon({
-                    className: 'route-idx-marker',
-                    html: `<span>${stepNumber}</span>`, 
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15]
-                });
+                // Solo añadimos a la polilínea del plano si no está pendiente de fijar sus coordenadas reales
+                if (!segment.pendingSync) {
+                    polylinePoints.push(segment.coords);
+                }
 
-                const marker = L.marker(segment.coords, { icon: customIcon })
-                    .bindPopup(`<b>Tramo #${stepNumber}</b><br>${segment.street}, No. ${segment.portal}<br>Acera: ${segment.sidewalk.toUpperCase()}`);
-                routeMarkersGroup.addLayer(marker);
+                // Dibujar marcador en el mapa si está geolocalizado correctamente
+                if (!segment.pendingSync) {
+                    const customIcon = L.divIcon({
+                        className: 'route-idx-marker',
+                        html: `<span>${stepNumber}</span>`, 
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
 
-                generateMicroPortals(segment.coords, segment.portal, segment.sidewalk);
+                    const marker = L.marker(segment.coords, { icon: customIcon })
+                        .bindPopup(`<b>Tramo #${stepNumber}</b><br>${segment.street}, No. ${segment.portal}<br>Acera: ${segment.sidewalk.toUpperCase()}`);
+                    routeMarkersGroup.addLayer(marker);
+
+                    generateMicroPortals(segment.coords, segment.portal, segment.sidewalk);
+                }
 
                 const row = document.createElement("div");
-                row.className = "flex items-center justify-between p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg border-l-4 border-blue-900 dark:border-blue-500";
+                row.className = `flex items-center justify-between p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg border-l-4 ${segment.pendingSync ? 'border-amber-500' : 'border-blue-900 dark:border-blue-500'}`;
+                
                 row.innerHTML = `
                     <div class="text-xs flex-1 pr-2">
-                        <p class="font-bold dark:text-white">${stepNumber}. ${segment.street}</p>
+                        <div class="flex items-center space-x-1.5">
+                            <p class="font-bold dark:text-white">${stepNumber}. ${segment.street}</p>
+                            ${segment.pendingSync ? `
+                                <span class="bg-amber-500/20 text-amber-600 dark:text-amber-400 font-mono font-bold text-[9px] px-1.5 py-0.5 rounded flex items-center space-x-0.5">
+                                    <span class="w-1 h-1 rounded-full bg-amber-500 animate-pulse"></span>
+                                    <span>Offline</span>
+                                </span>
+                            ` : ''}
+                        </div>
                         <p class="text-gray-500 dark:text-gray-400">Portal: ${segment.portal} • Acera: ${segment.sidewalk}</p>
                     </div>
                     <div class="flex items-center space-x-1">
@@ -750,6 +829,15 @@
                 `;
                 listContainer.appendChild(row);
             });
+
+            // Control visual del botón superior de sincronización de cola
+            const syncBtn = document.getElementById("syncQueueBtn");
+            if (pendingSyncCount > 0) {
+                syncBtn.classList.remove("hidden");
+                syncBtn.querySelector("span").textContent = `Ubicar (${pendingSyncCount})`;
+            } else {
+                syncBtn.classList.add("hidden");
+            }
 
             if (polylinePoints.length > 1) {
                 const polyline = L.polyline(polylinePoints, {
