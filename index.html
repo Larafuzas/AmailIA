@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v5.2.0)</title>
+    <title>AmailIA - Optimización de Reparto (v5.2.1)</title>
+    
+    <link rel="icon" type="image/png" href="icono.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
+    <meta name="apple-mobile-web-app-title" content="AmailIA">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -248,7 +252,7 @@
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     <span>Sincronización OTA</span>
                 </span>
-                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.2.0</span>
+                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.2.1</span>
             </button>
         </div>
     </aside>
@@ -256,7 +260,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "5.2.0";
+        const APP_VERSION = "5.2.1";
 
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
@@ -285,7 +289,6 @@
             renderHistoryFileList();
             updateCallejeroStatusUI();
 
-            // Escuchar cambios de conectividad para auto-sincronizar tramos pendientes
             window.addEventListener('online', syncPendingCoordinates);
         });
 
@@ -582,8 +585,6 @@
             map.removeLayer(detailPortalsGroup);
 
             const polylinePoints = [];
-
-            // Filtrar solo los tramos que sí tengan coordenadas válidas
             const validSegments = job.data.filter(s => s.coords && s.coords.length === 2);
 
             validSegments.forEach((segment, idx) => {
@@ -638,9 +639,6 @@
             renderHistoryFileList();
         }
 
-        /* =====================================================================
-           FLUJO DE INSERCIÓN CON GEOLOCALIZACIÓN DIFERIDA (LAZY OFFLINE)
-           ===================================================================== */
         async function handleFormSubmit(event) {
             event.preventDefault();
             const submitBtn = document.getElementById("submitBtn");
@@ -656,7 +654,6 @@
             if (customCoordsRaw) {
                 geoPoint = JSON.parse(customCoordsRaw);
             } else if (navigator.onLine) {
-                // Modo con Cobertura: Intentar consulta online normal
                 try {
                     const targetMuni = MUNICIPALITIES[currentMunicipality].name;
                     const searchQueries = [
@@ -673,14 +670,12 @@
                         }
                     }
                 } catch (err) {
-                    console.error("Fallo asíncrono en Nominatim, conmutando a inserción offline estática.");
+                    console.error("Fallo asíncrono en Nominatim.");
                 }
             }
 
-            // MEJORA CRÍTICA: Si no hay red o Nominatim falla, se procesa el tramo igualmente en local
             if (!geoPoint) {
                 isPendingSync = true;
-                // Usamos las coordenadas base del pueblo para que no rompa el tipado de Leaflet inicialmente
                 geoPoint = [...MUNICIPALITIES[currentMunicipality].coords];
             }
 
@@ -691,7 +686,7 @@
                 portal: portalNum,
                 sidewalk: sidewalk,
                 coords: geoPoint,
-                pendingSync: isPendingSync // Bandera de control técnico
+                pendingSync: isPendingSync 
             };
 
             activeRouteData.push(routeSegment);
@@ -706,17 +701,14 @@
             if (!isPendingSync) {
                 map.panTo(geoPoint);
             } else {
-                // Intentar disparar una sincronización silenciosa por si fue un microcorte de la API
                 syncPendingCoordinates();
             }
         }
 
-        // MOTOR DE BACKGROUND SYNC: Resuelve las coordenadas pendientes al recuperar cobertura
         async function syncPendingCoordinates() {
             if (!navigator.onLine) return;
 
             let recordsChanged = false;
-            const syncBtn = document.getElementById("syncQueueBtn");
 
             for (let segment of activeRouteData) {
                 if (segment.pendingSync) {
@@ -778,12 +770,10 @@
                 
                 if (segment.pendingSync) pendingSyncCount++;
 
-                // Solo añadimos a la polilínea del plano si no está pendiente de fijar sus coordenadas reales
                 if (!segment.pendingSync) {
                     polylinePoints.push(segment.coords);
                 }
 
-                // Dibujar marcador en el mapa si está geolocalizado correctamente
                 if (!segment.pendingSync) {
                     const customIcon = L.divIcon({
                         className: 'route-idx-marker',
@@ -830,7 +820,6 @@
                 listContainer.appendChild(row);
             });
 
-            // Control visual del botón superior de sincronización de cola
             const syncBtn = document.getElementById("syncQueueBtn");
             if (pendingSyncCount > 0) {
                 syncBtn.classList.remove("hidden");
