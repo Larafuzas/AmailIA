@@ -32,10 +32,10 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            min-height: 100dvh; /* Evita descuadres en navegadores móviles */
+            min-height: 100dvh; /* Previene saltos con las barras dinámicas de iOS/Safari */
         }
 
-        /* Contenedor adaptativo: móvil real o simulación en escritorio */
+        /* Contenedor Adaptativo Móvil */
         .phone-container {
             width: 100%;
             max-width: 390px;
@@ -58,7 +58,7 @@
             }
         }
 
-        /* Contenido con reparto de espacio para el mapa de fondo */
+        /* Layout con división lateral para el Mapa */
         .main-layout {
             flex: 1;
             display: flex;
@@ -88,7 +88,7 @@
             position: relative;
         }
 
-        /* Cabecera limpia sin duplicar reloj */
+        /* Cabecera */
         .app-header {
             display: flex;
             justify-content: space-between;
@@ -120,7 +120,7 @@
             margin-bottom: 6px;
         }
 
-        /* Selector de municipios interactivo */
+        /* Selector de municipios */
         .terminos-container {
             display: flex;
             background-color: var(--bg-card);
@@ -139,7 +139,7 @@
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, color 0.2s;
         }
 
         .termino-btn.active {
@@ -177,13 +177,13 @@
             font-size: 14px;
             outline: none;
             width: 100%;
-            -webkit-appearance: none; /* Forzar estilo en iOS */
+            -webkit-appearance: none;
         }
         .input-field::placeholder {
             color: #57657a;
         }
 
-        /* FIX: Selector select en iOS */
+        /* Fix Selectores iOS nativos */
         select.input-field {
             appearance: none;
             -webkit-appearance: none;
@@ -214,7 +214,7 @@
             cursor: pointer;
         }
 
-        /* Contenedor dinámico del orden de reparto */
+        /* Bloque Orden de Reparto */
         .reparto-diario-block {
             flex: 1;
             display: flex;
@@ -226,7 +226,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 200px;
+            max-height: 220px;
             overflow-y: auto;
         }
 
@@ -234,17 +234,20 @@
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            padding: 10px 12px;
+            padding: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 13px;
+            animation: fadeIn 0.2s ease-in-out;
         }
 
         .tramo-item span.remove {
             color: #ef4444;
             cursor: pointer;
+            font-size: 18px;
             font-weight: bold;
+            padding: 0 4px;
         }
 
         .no-tramos-msg {
@@ -266,9 +269,10 @@
             cursor: pointer;
             width: 100%;
             margin-top: auto;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
+        /* Botones flotantes laterales */
         .map-controls {
             position: absolute;
             bottom: 24px;
@@ -291,7 +295,7 @@
             border: 1px solid var(--border-color);
         }
 
-        /* Panel de Ajustes */
+        /* Panel de Ajustes Desplegable */
         .ajustes-panel {
             position: absolute;
             bottom: 0;
@@ -333,6 +337,7 @@
             border: 1px solid var(--border-color);
         }
 
+        /* Tarjeta Estado Descarga */
         .status-box-download {
             background-color: var(--bg-main);
             border: 1px solid var(--accent-green);
@@ -341,6 +346,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            transition: border-color 0.2s ease;
         }
 
         .status-box-header { display: flex; justify-content: space-between; align-items: center; }
@@ -364,7 +370,22 @@
         .btn-ajuste { flex: 1; padding: 14px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
         .btn-ajuste-primary { background-color: var(--accent-blue); color: white; }
         .btn-ajuste-danger { background-color: #521b1b; color: #f87171; }
-        .btn-ota { background-color: var(--bg-main); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; font-size: 12px; cursor: pointer; margin-top: auto; }
+        
+        .btn-ota { 
+            background-color: var(--bg-main); 
+            color: var(--text-secondary); 
+            border: 1px solid var(--border-color); 
+            padding: 12px; 
+            border-radius: 8px; 
+            font-size: 12px; 
+            cursor: pointer; 
+            margin-top: auto; 
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -397,7 +418,7 @@
 
             <div class="form-group">
                 <p class="section-label">Calle</p>
-                <input type="text" class="input-field" id="input-busqueda-vias" list="lista-vias" placeholder="Escribe el nombre de la vía...">
+                <input type="text" class="input-field" id="input-busqueda-vias" list="lista-vias" placeholder="Escribe el nombre de la vía..." autocomplete="off">
                 <datalist id="lista-vias"></datalist>
             </div>
 
@@ -474,7 +495,7 @@
     let viasEnMemoria = [];
     let tramosJornada = [];
 
-    // Cambiar de municipio limpiando e indexando inputs
+    // Gestión e indexación limpia de los municipios
     function cambiarTerminoDeTrabajo(nuevoTermino) {
         if (terminoActual === nuevoTermino) return;
         terminoActual = nuevoTermino;
@@ -487,12 +508,11 @@
             }
         });
 
-        // Limpiar campo de búsqueda al cambiar de pueblo
         document.getElementById("input-busqueda-vias").value = "";
         cargarDatosMunicipales();
     }
 
-    // Descarga desde Overpass
+    // Consulta e indexación Overpass API (Urbana Completa)
     async function descargarCallesMunicipio() {
         actualizarUIAlmacenamiento("DESCARGANDO...", "Consultando pasarelas Overpass...", "0.0 KB", "#f59e0b", "#78350f");
 
@@ -509,7 +529,7 @@
 
         try {
             const respuesta = await fetch(endpointUrl);
-            if (!respuesta.ok) throw new Error("Fallo en la comunicación con OpenStreetMap.");
+            if (!respuesta.ok) throw new Error("Fallo de red en servidores OSM.");
             
             const datosJSON = await respuesta.json();
             let listaCallesUnicas = new Set();
@@ -523,7 +543,7 @@
             }
 
             viasEnMemoria = Array.from(listaCallesUnicas).sort((a, b) => a.localeCompare(b));
-            if (viasEnMemoria.length === 0) throw new Error("No se encontraron calles.");
+            if (viasEnMemoria.length === 0) throw new Error("Área sin registros válidos.");
 
             localStorage.setItem(`vias_${terminoActual}`, JSON.stringify(viasEnMemoria));
             renderizarDatalist();
@@ -537,7 +557,7 @@
         }
     }
 
-    // Carga de calles en LocalStorage y actualización de sugerencias
+    // Sincronización LocalStorage
     function cargarDatosMunicipales() {
         document.getElementById("lbl-nombre-pueblo").textContent = terminoActual;
         const persistenciaLocal = localStorage.getItem(`vias_${terminoActual}`);
@@ -554,7 +574,7 @@
         }
     }
 
-    // Renderizar las opciones de autocompletado en el input
+    // Rellenar sugerencias del Input
     function renderizarDatalist() {
         const datalist = document.getElementById("lista-vias");
         datalist.innerHTML = "";
@@ -565,14 +585,14 @@
         });
     }
 
-    // FUNCIÓN: Insertar tramos reales en la lista de la jornada
+    // Insertar tramos de reparto reales
     function insertarTramoJornada() {
         const calleElement = document.getElementById("input-busqueda-vias");
         const portalElement = document.getElementById("input-portal");
         const aceraElement = document.getElementById("select-acera");
 
         if (!calleElement.value.trim()) {
-            alert("Por favor, escribe una calle válida.");
+            alert("Escribe o selecciona una vía urbana.");
             return;
         }
 
@@ -585,7 +605,6 @@
 
         tramosJornada.push(nuevoTramo);
         
-        // Resetear inputs menores
         calleElement.value = "";
         portalElement.value = "";
 
@@ -624,10 +643,10 @@
 
     function finalizarJornada() {
         if(tramosJornada.length === 0) {
-            alert("No puedes archivar una jornada vacía.");
+            alert("No hay tramos activos cargados.");
             return;
         }
-        alert(`Jornada archivada con ${tramosJornada.length} tramos registrados con éxito.`);
+        alert(`Jornada guardada con éxito. Registrados: ${tramosJornada.length} tramos.`);
         tramosJornada = [];
         actualizarListaTramosUI();
     }
