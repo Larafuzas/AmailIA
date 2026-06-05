@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v5.3.0)</title>
+    <title>AmailIA - Optimización de Reparto (v5.3.1)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
@@ -259,7 +259,7 @@
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     <span>Sincronización OTA</span>
                 </span>
-                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.3.0</span>
+                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.3.1</span>
             </button>
         </div>
     </aside>
@@ -267,7 +267,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "5.3.0";
+        const APP_VERSION = "5.3.1";
 
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
@@ -610,7 +610,6 @@
                 historyLayersGroup.addLayer(marker);
             });
 
-            // Intentar recuperar el trazado exacto de calles del historial si contiene suficientes puntos
             if (polylinePoints.length > 1) {
                 const coordsString = polylinePoints.map(c => `${c[1]},${c[0]}`).join(';');
                 const url = `https://router.openstreetmap.de/routed-foot/route/v1/foot/${coordsString}?overview=full&geometries=geojson`;
@@ -623,7 +622,6 @@
                             const polyline = L.polyline(latsLongs, { color: '#dc2626', weight: 5, opacity: 0.9, lineJoin: 'round' });
                             polyline.addTo(historyLayersGroup);
                         } else {
-                            // Fallback a línea recta si falla la red en el historial
                             const polyline = L.polyline(polylinePoints, { color: '#dc2626', weight: 5, opacity: 0.9, lineJoin: 'round' });
                             polyline.addTo(historyLayersGroup);
                         }
@@ -661,7 +659,7 @@
         }
 
         /* =====================================================================
-           MOTOR DE OPTIMIZACIÓN PEATONAL (TSP) Y ROUTING GEOMETRÍA REAL
+           MOTOR DE OPTIMIZACIÓN PEATONAL (TSP) CON CAPTURA DE EXCEPCIONES Y COLA
            ===================================================================== */
         async function optimizeRouteTSP() {
             if (!navigator.onLine) {
@@ -684,20 +682,23 @@
             btn.disabled = true;
             btn.querySelector("span").textContent = "Calculando ruta óptima...";
 
-            // OSRM lee Longitud,Latitud. Fijamos el primer tramo inyectado como punto de origen de la marcha
             const coordsString = tramosValidos.map(s => `${s.coords[1]},${s.coords[0]}`).join(';');
             const url = `https://router.openstreetmap.de/routed-foot/trip/v1/foot/${coordsString}?source=first&destination=any&roundtrip=false`;
 
             try {
                 const response = await fetch(url);
+                
+                // VALIDACIÓN DE SALUD DE LA RESPUESTA (Evita bloqueos si hay HTTP 429 o 504)
+                if (!response.ok) {
+                    throw new Error(`Saturación de servidor (HTTP ${response.status})`);
+                }
+
                 const data = await response.json();
 
                 if (data.code !== "Ok" || !data.waypoints) {
-                    alert("No se ha podido procesar la matriz de distancias para estos portales.");
-                    return;
+                    throw new Error("Respuesta inválida del motor cartográfico.");
                 }
 
-                // Reordenar el array basándonos en el cálculo del problema del viajante peatonal
                 const sortedWaypoints = data.waypoints.sort((a, b) => a.trips_index - b.trips_index);
                 const optimizedData = sortedWaypoints.map(wp => tramosValidos[wp.waypoint_index]);
 
@@ -708,7 +709,9 @@
                 alert("¡Ruta reordenada! Recorrido optimizado a pie para minimizar metros caminados.");
             } catch (err) {
                 console.error(err);
-                alert("Error de respuesta del servidor OSRM. Inténtalo de nuevo en unos minutos.");
+                // FALLBACK ESTRATÉGICO: Informar del límite de tasa pero mantener la app funcional
+                alert("Servidor OSRM saturado temporalmente.\n\nPara no frenar tu reparto, se mantendrá el orden actual en el listado y el mapa seguirá renderizándose en líneas directas.");
+                renderActiveRoute(); // Forzar redibujado local sin romper la interfaz
             } finally {
                 btn.disabled = false;
                 btn.querySelector("span").textContent = "Calcular Ruta Peatonal Óptima";
@@ -905,28 +908,29 @@
                 syncBtn.classList.add("hidden");
             }
 
-            // TRAZADO INTELIGENTE (ROUTING) SIGUIENDO CALLES EN VEZ DE LÍNEAS RECTAS
+            // BLINDAJE DE SEGURIDAD EN EL TRAZADO EN VIVO (Mesa de control de fallos en Fetch)
             if (polylinePoints.length > 1) {
                 const coordsString = polylinePoints.map(c => `${c[1]},${c[0]}`).join(';');
                 const url = `https://router.openstreetmap.de/routed-foot/route/v1/foot/${coordsString}?overview=full&geometries=geojson`;
 
                 fetch(url)
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) throw new Error("Saturación de trazas de mapas");
+                        return res.json();
+                    })
                     .then(data => {
                         if (data.code === "Ok" && data.routes && data.routes[0]) {
-                            // Mapeamos las coordenadas OSRM (lng,lat) al formato Leaflet (lat,lng)
                             const latsLongs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                            
                             const polyline = L.polyline(latsLongs, {
                                 color: '#1e3a8a', weight: 5, opacity: 0.85, lineJoin: 'round'
                             });
                             polyline.addTo(routeLinesGroup);
                         } else {
-                            // Fallback a línea recta si la red falla
                             drawStraightPolylineFallback(polylinePoints);
                         }
                     })
                     .catch(() => {
+                        // Captura silenciosa si el servidor OSM tira error: dibuja líneas rectas automáticas
                         drawStraightPolylineFallback(polylinePoints);
                     });
             }
@@ -935,6 +939,7 @@
         }
 
         function drawStraightPolylineFallback(points) {
+            routeLinesGroup.clearLayers(); // Asegurar limpieza antes de pintar fallback
             const polyline = L.polyline(points, {
                 color: '#1e3a8a', weight: 4, opacity: 0.8, dashArray: '8, 12', lineJoin: 'round'
             });
