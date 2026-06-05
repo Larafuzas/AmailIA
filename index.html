@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v5.3.1)</title>
+    <title>AmailIA - Optimización de Reparto (v5.4.0)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
@@ -169,11 +169,11 @@
             <hr class="border-gray-200 dark:border-gray-800">
 
             <div>
-                <button onclick="optimizeRouteTSP()" id="tspOptimizeBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 mb-4 active:scale-[0.98] transition-all">
+                <button onclick="optimizeRouteLocalTSP()" id="tspOptimizeBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 mb-4 active:scale-[0.98] transition-all">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                     </svg>
-                    <span class="text-xs">Calcular Ruta Peatonal Óptima</span>
+                    <span class="text-xs">Optimizar Secuencia a Pie (Local)</span>
                 </button>
 
                 <div class="flex items-center justify-between mb-2">
@@ -259,7 +259,7 @@
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     <span>Sincronización OTA</span>
                 </span>
-                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.3.1</span>
+                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.4.0</span>
             </button>
         </div>
     </aside>
@@ -267,7 +267,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "5.3.1";
+        const APP_VERSION = "5.4.0";
 
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
@@ -611,25 +611,8 @@
             });
 
             if (polylinePoints.length > 1) {
-                const coordsString = polylinePoints.map(c => `${c[1]},${c[0]}`).join(';');
-                const url = `https://router.openstreetmap.de/routed-foot/route/v1/foot/${coordsString}?overview=full&geometries=geojson`;
-
-                fetch(url)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.code === "Ok" && data.routes && data.routes[0]) {
-                            const latsLongs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                            const polyline = L.polyline(latsLongs, { color: '#dc2626', weight: 5, opacity: 0.9, lineJoin: 'round' });
-                            polyline.addTo(historyLayersGroup);
-                        } else {
-                            const polyline = L.polyline(polylinePoints, { color: '#dc2626', weight: 5, opacity: 0.9, lineJoin: 'round' });
-                            polyline.addTo(historyLayersGroup);
-                        }
-                    })
-                    .catch(() => {
-                        const polyline = L.polyline(polylinePoints, { color: '#dc2626', weight: 5, opacity: 0.9, lineJoin: 'round' });
-                        polyline.addTo(historyLayersGroup);
-                    });
+                const polyline = L.polyline(polylinePoints, { color: '#dc2626', weight: 4, opacity: 0.9, dashArray: '6, 8', lineJoin: 'round' });
+                polyline.addTo(historyLayersGroup);
             }
 
             if(polylinePoints.length > 0) {
@@ -659,66 +642,79 @@
         }
 
         /* =====================================================================
-           MOTOR DE OPTIMIZACIÓN PEATONAL (TSP) CON CAPTURA DE EXCEPCIONES Y COLA
+           MOTOR DE OPTIMIZACIÓN LOCAL (VECINO MÁS CERCANO - HA VERSINE TSP)
            ===================================================================== */
-        async function optimizeRouteTSP() {
-            if (!navigator.onLine) {
-                alert("Se requiere conexión de datos para recalcular y optimizar la ruta en el servidor cartográfico.");
-                return;
-            }
+        // Cálculo matemático nativo en CPU: Distancia entre dos puntos geográficos
+        function calculateHaversineDistance(coords1, coords2) {
+            const R = 6371e3; // Radio de la Tierra en metros
+            const lat1 = coords1[0] * Math.PI / 180;
+            const lat2 = coords2[0] * Math.PI / 180;
+            const deltaLat = (coords2[0] - coords1[0]) * Math.PI / 180;
+            const deltaLon = (coords2[1] - coords1[1]) * Math.PI / 180;
 
+            const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                      Math.cos(lat1) * Math.cos(lat2) *
+                      Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c; // Retorno en metros exactos
+        }
+
+        function optimizeRouteLocalTSP() {
             const tramosValidos = activeRouteData.filter(s => !s.pendingSync);
             if (tramosValidos.length < 3) {
-                alert("Introduce al menos 3 tramos válidos para poder secuenciar la ruta de forma inteligente.");
-                return;
-            }
-
-            if (tramosValidos.length !== activeRouteData.length) {
-                alert("Hay tramos registrados en modo offline. Por favor, pulsa primero 'Sincronizar Plano' antes de optimizar.");
+                alert("Introduce al menos 3 tramos sincronizados para ordenar la jornada.");
                 return;
             }
 
             const btn = document.getElementById("tspOptimizeBtn");
             btn.disabled = true;
-            btn.querySelector("span").textContent = "Calculando ruta óptima...";
 
-            const coordsString = tramosValidos.map(s => `${s.coords[1]},${s.coords[0]}`).join(';');
-            const url = `https://router.openstreetmap.de/routed-foot/trip/v1/foot/${coordsString}?source=first&destination=any&roundtrip=false`;
+            // ALGORITMO: Vecino más cercano (Nearest Neighbor) ejecutado de forma síncrona local
+            let pool = [...tramosValidos];
+            let optimizedResult = [];
+            
+            // Fijamos por diseño el primer elemento inyectado como el punto de inicio de la marcha
+            let current = pool.shift();
+            optimizedResult.push(current);
 
-            try {
-                const response = await fetch(url);
-                
-                // VALIDACIÓN DE SALUD DE LA RESPUESTA (Evita bloqueos si hay HTTP 429 o 504)
-                if (!response.ok) {
-                    throw new Error(`Saturación de servidor (HTTP ${response.status})`);
+            while (pool.length > 0) {
+                let indexMasCercano = 0;
+                let distanciaMinima = calculateHaversineDistance(current.coords, pool[0].coords);
+
+                for (let i = 1; i < pool.length; i++) {
+                    let d = calculateHaversineDistance(current.coords, pool[i].coords);
+                    if (d < distanciaMinima) {
+                        distanciaMinima = d;
+                        indexMasCercano = i;
+                    }
                 }
 
-                const data = await response.json();
+                // El vecino más cercano pasa a ser la cabecera del siguiente paso
+                current = pool.splice(indexMasCercano, 1)[0];
+                optimizedResult.push(current);
+            }
 
-                if (data.code !== "Ok" || !data.waypoints) {
-                    throw new Error("Respuesta inválida del motor cartográfico.");
-                }
+            // Si hay elementos offline residuales, se acoplan al final para evitar pérdida de datos
+            const tramosOffline = activeRouteData.filter(s => s.pendingSync);
+            activeRouteData = [...optimizedResult, ...tramosOffline];
 
-                const sortedWaypoints = data.waypoints.sort((a, b) => a.trips_index - b.trips_index);
-                const optimizedData = sortedWaypoints.map(wp => tramosValidos[wp.waypoint_index]);
-
-                activeRouteData = optimizedData;
-                saveStateToLocalStorage();
-                renderActiveRoute();
-                
-                alert("¡Ruta reordenada! Recorrido optimizado a pie para minimizar metros caminados.");
-            } catch (err) {
-                console.error(err);
-                // FALLBACK ESTRATÉGICO: Informar del límite de tasa pero mantener la app funcional
-                alert("Servidor OSRM saturado temporalmente.\n\nPara no frenar tu reparto, se mantendrá el orden actual en el listado y el mapa seguirá renderizándose en líneas directas.");
-                renderActiveRoute(); // Forzar redibujado local sin romper la interfaz
-            } finally {
-                btn.disabled = false;
-                btn.querySelector("span").textContent = "Calcular Ruta Peatonal Óptima";
-                closeAllSidebars();
+            saveStateToLocalStorage();
+            renderActiveRoute();
+            
+            btn.disabled = false;
+            closeAllSidebars();
+            
+            // Hacer zoom adaptativo en base a la nueva traza optimizada
+            if(optimizedResult.length > 0) {
+                const bounds = optimizedResult.map(s => s.coords);
+                map.fitBounds(bounds, { padding: [40, 40] });
             }
         }
 
+        /* =====================================================================
+           PROCESAMIENTO ORIGINAL Y CONTROL DE FLUJOS LOCALES
+           ===================================================================== */
         async function handleFormSubmit(event) {
             event.preventDefault();
             const submitBtn = document.getElementById("submitBtn");
@@ -908,42 +904,15 @@
                 syncBtn.classList.add("hidden");
             }
 
-            // BLINDAJE DE SEGURIDAD EN EL TRAZADO EN VIVO (Mesa de control de fallos en Fetch)
+            // RENDERIZADO SEGURO DE LA LÍNEA DEL MAPA (Optimización Local Offline)
             if (polylinePoints.length > 1) {
-                const coordsString = polylinePoints.map(c => `${c[1]},${c[0]}`).join(';');
-                const url = `https://router.openstreetmap.de/routed-foot/route/v1/foot/${coordsString}?overview=full&geometries=geojson`;
-
-                fetch(url)
-                    .then(res => {
-                        if (!res.ok) throw new Error("Saturación de trazas de mapas");
-                        return res.json();
-                    })
-                    .then(data => {
-                        if (data.code === "Ok" && data.routes && data.routes[0]) {
-                            const latsLongs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                            const polyline = L.polyline(latsLongs, {
-                                color: '#1e3a8a', weight: 5, opacity: 0.85, lineJoin: 'round'
-                            });
-                            polyline.addTo(routeLinesGroup);
-                        } else {
-                            drawStraightPolylineFallback(polylinePoints);
-                        }
-                    })
-                    .catch(() => {
-                        // Captura silenciosa si el servidor OSM tira error: dibuja líneas rectas automáticas
-                        drawStraightPolylineFallback(polylinePoints);
-                    });
+                const polyline = L.polyline(polylinePoints, {
+                    color: '#1e3a8a', weight: 4, opacity: 0.85, dashArray: '6, 10', lineJoin: 'round'
+                });
+                polyline.addTo(routeLinesGroup);
             }
 
             evaluateDetailPortalsVisibility();
-        }
-
-        function drawStraightPolylineFallback(points) {
-            routeLinesGroup.clearLayers(); // Asegurar limpieza antes de pintar fallback
-            const polyline = L.polyline(points, {
-                color: '#1e3a8a', weight: 4, opacity: 0.8, dashArray: '8, 12', lineJoin: 'round'
-            });
-            polyline.addTo(routeLinesGroup);
         }
 
         function generateMicroPortals(centerCoords, startPortal, sidewalkMode) {
