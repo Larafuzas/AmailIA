@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v5.2.1)</title>
+    <title>AmailIA - Optimización de Reparto (v5.3.0)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
@@ -169,6 +169,13 @@
             <hr class="border-gray-200 dark:border-gray-800">
 
             <div>
+                <button onclick="optimizeRouteTSP()" id="tspOptimizeBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 mb-4 active:scale-[0.98] transition-all">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                    </svg>
+                    <span class="text-xs">Calcular Ruta Peatonal Óptima</span>
+                </button>
+
                 <div class="flex items-center justify-between mb-2">
                     <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tramos de la Ruta Actual</label>
                     <button onclick="syncPendingCoordinates()" id="syncQueueBtn" class="hidden text-[11px] bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-2 py-1 rounded-lg flex items-center space-x-1 transition-all">
@@ -252,7 +259,7 @@
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     <span>Sincronización OTA</span>
                 </span>
-                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.2.1</span>
+                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.3.0</span>
             </button>
         </div>
     </aside>
@@ -260,7 +267,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "5.2.1";
+        const APP_VERSION = "5.3.0";
 
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
@@ -603,14 +610,28 @@
                 historyLayersGroup.addLayer(marker);
             });
 
+            // Intentar recuperar el trazado exacto de calles del historial si contiene suficientes puntos
             if (polylinePoints.length > 1) {
-                const polyline = L.polyline(polylinePoints, {
-                    color: '#dc2626', 
-                    weight: 5,
-                    opacity: 0.9,
-                    lineJoin: 'round'
-                });
-                polyline.addTo(historyLayersGroup);
+                const coordsString = polylinePoints.map(c => `${c[1]},${c[0]}`).join(';');
+                const url = `https://router.openstreetmap.de/routed-foot/route/v1/foot/${coordsString}?overview=full&geometries=geojson`;
+
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.code === "Ok" && data.routes && data.routes[0]) {
+                            const latsLongs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                            const polyline = L.polyline(latsLongs, { color: '#dc2626', weight: 5, opacity: 0.9, lineJoin: 'round' });
+                            polyline.addTo(historyLayersGroup);
+                        } else {
+                            // Fallback a línea recta si falla la red en el historial
+                            const polyline = L.polyline(polylinePoints, { color: '#dc2626', weight: 5, opacity: 0.9, lineJoin: 'round' });
+                            polyline.addTo(historyLayersGroup);
+                        }
+                    })
+                    .catch(() => {
+                        const polyline = L.polyline(polylinePoints, { color: '#dc2626', weight: 5, opacity: 0.9, lineJoin: 'round' });
+                        polyline.addTo(historyLayersGroup);
+                    });
             }
 
             if(polylinePoints.length > 0) {
@@ -637,6 +658,62 @@
             history.splice(index, 1);
             localStorage.setItem("amailia_history", JSON.stringify(history));
             renderHistoryFileList();
+        }
+
+        /* =====================================================================
+           MOTOR DE OPTIMIZACIÓN PEATONAL (TSP) Y ROUTING GEOMETRÍA REAL
+           ===================================================================== */
+        async function optimizeRouteTSP() {
+            if (!navigator.onLine) {
+                alert("Se requiere conexión de datos para recalcular y optimizar la ruta en el servidor cartográfico.");
+                return;
+            }
+
+            const tramosValidos = activeRouteData.filter(s => !s.pendingSync);
+            if (tramosValidos.length < 3) {
+                alert("Introduce al menos 3 tramos válidos para poder secuenciar la ruta de forma inteligente.");
+                return;
+            }
+
+            if (tramosValidos.length !== activeRouteData.length) {
+                alert("Hay tramos registrados en modo offline. Por favor, pulsa primero 'Sincronizar Plano' antes de optimizar.");
+                return;
+            }
+
+            const btn = document.getElementById("tspOptimizeBtn");
+            btn.disabled = true;
+            btn.querySelector("span").textContent = "Calculando ruta óptima...";
+
+            // OSRM lee Longitud,Latitud. Fijamos el primer tramo inyectado como punto de origen de la marcha
+            const coordsString = tramosValidos.map(s => `${s.coords[1]},${s.coords[0]}`).join(';');
+            const url = `https://router.openstreetmap.de/routed-foot/trip/v1/foot/${coordsString}?source=first&destination=any&roundtrip=false`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.code !== "Ok" || !data.waypoints) {
+                    alert("No se ha podido procesar la matriz de distancias para estos portales.");
+                    return;
+                }
+
+                // Reordenar el array basándonos en el cálculo del problema del viajante peatonal
+                const sortedWaypoints = data.waypoints.sort((a, b) => a.trips_index - b.trips_index);
+                const optimizedData = sortedWaypoints.map(wp => tramosValidos[wp.waypoint_index]);
+
+                activeRouteData = optimizedData;
+                saveStateToLocalStorage();
+                renderActiveRoute();
+                
+                alert("¡Ruta reordenada! Recorrido optimizado a pie para minimizar metros caminados.");
+            } catch (err) {
+                console.error(err);
+                alert("Error de respuesta del servidor OSRM. Inténtalo de nuevo en unos minutos.");
+            } finally {
+                btn.disabled = false;
+                btn.querySelector("span").textContent = "Calcular Ruta Peatonal Óptima";
+                closeAllSidebars();
+            }
         }
 
         async function handleFormSubmit(event) {
@@ -828,14 +905,40 @@
                 syncBtn.classList.add("hidden");
             }
 
+            // TRAZADO INTELIGENTE (ROUTING) SIGUIENDO CALLES EN VEZ DE LÍNEAS RECTAS
             if (polylinePoints.length > 1) {
-                const polyline = L.polyline(polylinePoints, {
-                    color: '#1e3a8a', weight: 4, opacity: 0.8, dashArray: '8, 12', lineJoin: 'round'
-                });
-                polyline.addTo(routeLinesGroup);
+                const coordsString = polylinePoints.map(c => `${c[1]},${c[0]}`).join(';');
+                const url = `https://router.openstreetmap.de/routed-foot/route/v1/foot/${coordsString}?overview=full&geometries=geojson`;
+
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.code === "Ok" && data.routes && data.routes[0]) {
+                            // Mapeamos las coordenadas OSRM (lng,lat) al formato Leaflet (lat,lng)
+                            const latsLongs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                            
+                            const polyline = L.polyline(latsLongs, {
+                                color: '#1e3a8a', weight: 5, opacity: 0.85, lineJoin: 'round'
+                            });
+                            polyline.addTo(routeLinesGroup);
+                        } else {
+                            // Fallback a línea recta si la red falla
+                            drawStraightPolylineFallback(polylinePoints);
+                        }
+                    })
+                    .catch(() => {
+                        drawStraightPolylineFallback(polylinePoints);
+                    });
             }
 
             evaluateDetailPortalsVisibility();
+        }
+
+        function drawStraightPolylineFallback(points) {
+            const polyline = L.polyline(points, {
+                color: '#1e3a8a', weight: 4, opacity: 0.8, dashArray: '8, 12', lineJoin: 'round'
+            });
+            polyline.addTo(routeLinesGroup);
         }
 
         function generateMicroPortals(centerCoords, startPortal, sidewalkMode) {
