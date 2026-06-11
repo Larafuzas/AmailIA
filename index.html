@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v5.4.0)</title>
+    <title>AmailIA - Optimización de Reparto (v5.5.0)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
@@ -65,6 +65,76 @@
 
         .map-picking-active {
             cursor: crosshair !important;
+        }
+
+        /* Contenedor invisible en pantalla, exclusivo para renderizar la tabla de impresión */
+        #printTableContainer { display: none; }
+
+        /* =====================================================================
+           ESTILOS DE IMPRESIÓN PROFESIONALES ( window.print() )
+           ===================================================================== */
+        @media print {
+            /* Ocultar absolutamente toda la interfaz de la app en el papel */
+            #menuBtn, #settingsBtn, #exitHistoryBtn, #toastMapPicker, #sidebar, #sidebarSettings, #sidebarOverlay {
+                display: none !important;
+            }
+            
+            /* Forzar al mapa a ocupar la mitad superior fija del folio */
+            #map {
+                position: relative !important;
+                width: 100% !important;
+                height: 45vh !important;
+                inset: 0 !important;
+                page-break-inside: avoid !important;
+            }
+
+            /* Desbloquear y dar estilo a la tabla dinámica de tramos */
+            #printTableContainer {
+                display: block !important;
+                width: 100% !important;
+                margin-top: 20px;
+                font-family: Arial, sans-serif;
+                color: #000000;
+            }
+
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                overflow: visible !important;
+                height: auto !important;
+            }
+
+            .print-title {
+                font-size: 20px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                border-bottom: 2px solid #000000;
+                padding-bottom: 5px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }
+
+            th {
+                background-color: #f2f2f2 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                border: 1px solid #dddddd;
+                padding: 8px;
+                font-size: 12px;
+                text-align: left;
+            }
+
+            td {
+                border: 1px solid #dddddd;
+                padding: 8px;
+                font-size: 13px;
+            }
+
+            tr { page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -209,6 +279,16 @@
         </div>
 
         <div class="flex-1 overflow-y-auto p-5 space-y-6">
+            <div class="space-y-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Exportación Física</label>
+                <button onclick="ejecutarImpresionJornada()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 active:scale-[0.98] transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.82l-.24 2.11A1.23 1.23 0 007.71 17.3h8.58a1.23 1.23 0 001.23-1.37l-.24-2.11M6.72 13.82a3.68 3.33 0 0110.56 0M6.72 13.82H4.47a1.23 1.23 0 00-1.23 1.23v2.45a1.23 1.23 0 001.23 1.23h1.23M17.28 13.82h2.25a1.23 1.23 0 011.23 1.23v2.45a1.23 1.23 0 01-1.23 1.23h-1.23M16.5 6.75H7.5v4.5h9v-4.5z" />
+                    </svg>
+                    <span class="text-xs">Imprimir Mapa y Listado</span>
+                </button>
+            </div>
+
             <div class="space-y-3">
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Callejero Local (Caché Offline)</label>
                 <div class="p-3.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
@@ -259,15 +339,33 @@
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     <span>Sincronización OTA</span>
                 </span>
-                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.4.0</span>
+                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.5.0</span>
             </button>
         </div>
     </aside>
 
+    <div id="printTableContainer">
+        <div class="print-title">AmailIA Logistics - Hoja de Ruta Activa</div>
+        <div style="font-size: 11px; margin-bottom: 15px;" id="printMetaLabel">Fecha de emisión: 11/06/2026</div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 8%; text-align: center;">Ord.</th>
+                    <th style="width: 20%;">Municipio</th>
+                    <th style="width: 52%;">Dirección / Calle</th>
+                    <th style="width: 12%; text-align: center;">Portal</th>
+                    <th style="width: 8%; text-align: center;">VºBº</th>
+                </tr>
+            </thead>
+            <tbody id="printTableBody">
+                </tbody>
+        </table>
+    </div>
+
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "5.4.0";
+        const APP_VERSION = "5.5.0";
 
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
@@ -364,6 +462,43 @@
             
             overlay.classList.remove("opacity-100");
             setTimeout(() => overlay.classList.add("hidden"), 300);
+        }
+
+        /* =====================================================================
+           SISTEMA DINÁMICO DE IMPRESIÓN (window.print())
+           ===================================================================== */
+        function ejecutarImpresionJornada() {
+            if (activeRouteData.length === 0) {
+                alert("No hay tramos cargados en la jornada actual para imprimir.");
+                return;
+            }
+
+            closeAllSidebars();
+
+            // Rellenar la fecha actual en los metadatos de impresión
+            const hoy = new Date();
+            document.getElementById("printMetaLabel").textContent = `Fecha de reparto: ${hoy.toLocaleDateString('es-ES')} | Total tramos secuenciados: ${activeRouteData.length}`;
+
+            // Inyectar dinámicamente las filas de la tabla antes de abrir el cuadro
+            const tbody = document.getElementById("printTableBody");
+            tbody.innerHTML = "";
+
+            activeRouteData.forEach((segment, index) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td style="text-align: center; font-weight: bold;">${index + 1}</td>
+                    <td style="text-transform: capitalize;">${MUNICIPALITIES[segment.municipality].name}</td>
+                    <td style="font-weight: bold;">${segment.street} <span style="font-size: 10px; font-weight: normal; color: #555;">(${segment.sidewalk.toUpperCase()})</span></td>
+                    <td style="text-align: center; font-weight: bold;">${segment.portal}</td>
+                    <td style="text-align: center;"><span style="display: inline-block; width: 14px; height: 14px; border: 1px solid #000; border-radius: 2px;"></span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Dar un margen mínimo de milisegundos para asegurar el cierre del sidebar y lanzar el driver del SO
+            setTimeout(() => {
+                window.print();
+            }, 350);
         }
 
         function activateMapPickerMode() {
@@ -642,11 +777,10 @@
         }
 
         /* =====================================================================
-           MOTOR DE OPTIMIZACIÓN LOCAL (VECINO MÁS CERCANO - HA VERSINE TSP)
+           MOTOR DE OPTIMIZACIÓN LOCAL (TSP PEATONAL HA VERSINE)
            ===================================================================== */
-        // Cálculo matemático nativo en CPU: Distancia entre dos puntos geográficos
         function calculateHaversineDistance(coords1, coords2) {
-            const R = 6371e3; // Radio de la Tierra en metros
+            const R = 6371e3; 
             const lat1 = coords1[0] * Math.PI / 180;
             const lat2 = coords2[0] * Math.PI / 180;
             const deltaLat = (coords2[0] - coords1[0]) * Math.PI / 180;
@@ -656,8 +790,7 @@
                       Math.cos(lat1) * Math.cos(lat2) *
                       Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-            return R * c; // Retorno en metros exactos
+            return R * c; 
         }
 
         function optimizeRouteLocalTSP() {
@@ -670,11 +803,9 @@
             const btn = document.getElementById("tspOptimizeBtn");
             btn.disabled = true;
 
-            // ALGORITMO: Vecino más cercano (Nearest Neighbor) ejecutado de forma síncrona local
             let pool = [...tramosValidos];
             let optimizedResult = [];
             
-            // Fijamos por diseño el primer elemento inyectado como el punto de inicio de la marcha
             let current = pool.shift();
             optimizedResult.push(current);
 
@@ -690,12 +821,10 @@
                     }
                 }
 
-                // El vecino más cercano pasa a ser la cabecera del siguiente paso
                 current = pool.splice(indexMasCercano, 1)[0];
                 optimizedResult.push(current);
             }
 
-            // Si hay elementos offline residuales, se acoplan al final para evitar pérdida de datos
             const tramosOffline = activeRouteData.filter(s => s.pendingSync);
             activeRouteData = [...optimizedResult, ...tramosOffline];
 
@@ -705,16 +834,12 @@
             btn.disabled = false;
             closeAllSidebars();
             
-            // Hacer zoom adaptativo en base a la nueva traza optimizada
             if(optimizedResult.length > 0) {
                 const bounds = optimizedResult.map(s => s.coords);
                 map.fitBounds(bounds, { padding: [40, 40] });
             }
         }
 
-        /* =====================================================================
-           PROCESAMIENTO ORIGINAL Y CONTROL DE FLUJOS LOCALES
-           ===================================================================== */
         async function handleFormSubmit(event) {
             event.preventDefault();
             const submitBtn = document.getElementById("submitBtn");
@@ -904,7 +1029,6 @@
                 syncBtn.classList.add("hidden");
             }
 
-            // RENDERIZADO SEGURO DE LA LÍNEA DEL MAPA (Optimización Local Offline)
             if (polylinePoints.length > 1) {
                 const polyline = L.polyline(polylinePoints, {
                     color: '#1e3a8a', weight: 4, opacity: 0.85, dashArray: '6, 10', lineJoin: 'round'
