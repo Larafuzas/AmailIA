@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v5.8.0)</title>
+    <title>AmailIA - Optimización de Reparto (v5.9.0)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
@@ -192,8 +192,8 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Portal de Inicio</label>
-                        <input type="number" id="portalInput" min="1" placeholder="1" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-white" required>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Portal / Lote (Ej: 21, 23, 25)</label>
+                        <input type="text" id="portalInput" placeholder="Ej. 12 o 21,25,27" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-white" required>
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Acera de Trabajo</label>
@@ -321,14 +321,14 @@
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     <span>Sincronización OTA</span>
                 </span>
-                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.8.0</span>
+                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.9.0</span>
             </button>
         </div>
     </aside>
 
     <div id="printTableContainer">
         <div class="print-title">AmailIA Logistics - Hoja de Ruta Activa</div>
-        <div style="font-size: 11px; margin-bottom: 15px;" id="printMetaLabel">Fecha de emisión: 16/06/2026</div>
+        <div style="font-size: 11px; margin-bottom: 15px;" id="printMetaLabel">Fecha de emisión: 24/06/2026</div>
         <table>
             <thead>
                 <tr>
@@ -346,7 +346,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "5.8.0";
+        const APP_VERSION = "5.9.0";
 
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
@@ -449,35 +449,22 @@
             setTimeout(() => { window.print(); }, 350);
         }
 
-        /* =====================================================================
-           MOTOR DE REORDENACIÓN DIRECTA POR ENTRADA NUMÉRICA (NUEVO v5.8.0)
-           ===================================================================== */
         function solicitarCambioPosicionDirecto(indexActual) {
             const totalTramos = activeRouteData.length;
             const posicionActual = indexActual + 1;
-            
-            // Cuadro de diálogo móvil rápido nativo para evitar lag de teclado
             const nuevaPosicionRaw = prompt(`Modificar posición de este tramo:\nActualmente está en el puesto ${posicionActual} de ${totalTramos}.\n\nIntroduce el nuevo número de destino (1 al ${totalTramos}):`);
-            
-            if (nuevaPosicionRaw === null) return; // Cancelado por el usuario
-            
+            if (nuevaPosicionRaw === null) return; 
             const nuevaPosicion = parseInt(nuevaPosicionRaw, 10);
-            
             if (isNaN(nuevaPosicion) || nuevaPosicion < 1 || nuevaPosicion > totalTramos) {
                 alert(`Error: Introduce un número válido entre 1 y ${totalTramos}.`);
                 return;
             }
-            
-            if (nuevaPosicion === posicionActual) return; // Misma posición, sin cambios
+            if (nuevaPosicion === posicionActual) return; 
 
             const indexDestino = nuevaPosicion - 1;
             const itemAMover = activeRouteData[indexActual];
-
-            // Eliminar de la posición antigua
             activeRouteData.splice(indexActual, 1);
-            // Insertar en la nueva posición desplazando el resto automáticamente hacia delante/atrás
             activeRouteData.splice(indexDestino, 0, itemAMover);
-
             saveStateToLocalStorage();
             renderActiveRoute();
         }
@@ -712,28 +699,77 @@
 
         function deleteHistoryJob(index) { if(!confirm("¿Eliminar del historial permanente?")) return; let history = JSON.parse(localStorage.getItem("amailia_history") || "[]"); history.splice(index, 1); localStorage.setItem("amailia_history", JSON.stringify(history)); renderHistoryFileList(); }
 
+        /* =====================================================================
+           FLUJO DE INSERCIÓN ADAPTADO: PROCESAMIENTO POR LOTES (BULK INPUT)
+           ===================================================================== */
         async function handleFormSubmit(event) {
-            event.preventDefault(); const submitBtn = document.getElementById("submitBtn");
-            const streetName = document.getElementById("streetInput").value.trim(); const portalNum = parseInt(document.getElementById("portalInput").value);
-            const sidewalk = document.getElementById("sidewalkInput").value; const customCoordsRaw = document.getElementById("customCoordsInput").value;
-            let geoPoint = null; let isPendingSync = false; submitBtn.disabled = true;
+            event.preventDefault();
+            const submitBtn = document.getElementById("submitBtn");
+            const streetName = document.getElementById("streetInput").value.trim();
+            const portalInputRaw = document.getElementById("portalInput").value.trim();
+            const sidewalk = document.getElementById("sidewalkInput").value;
+            const customCoordsRaw = document.getElementById("customCoordsInput").value;
 
-            if (customCoordsRaw) { geoPoint = JSON.parse(customCoordsRaw); } else if (navigator.onLine) {
-                try {
-                    const targetMuni = MUNICIPALITIES[currentMunicipality].name;
-                    const searchQueries = [`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`,`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`];
-                    for (let url of searchQueries) {
-                        const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } }); const data = await res.json();
-                        if (data && data.length > 0) { geoPoint = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; break; }
-                    }
-                } catch (err) {}
+            submitBtn.disabled = true;
+
+            // Separar la cadena de entrada por comas para soportar lotes de portales
+            const portalesLote = portalInputRaw.split(',').map(p => p.trim()).filter(p => p !== "");
+
+            // Bucle secuencial atómico por cada portal del lote
+            for (let portalToken of portalesLote) {
+                const portalNum = parseInt(portalToken, 10);
+                if (isNaN(portalNum)) continue; // Ignorar tokens mal formateados
+
+                let geoPoint = null;
+                let isPendingSync = false;
+
+                if (customCoordsRaw) {
+                    geoPoint = JSON.parse(customCoordsRaw);
+                } else if (navigator.onLine) {
+                    try {
+                        const targetMuni = MUNICIPALITIES[currentMunicipality].name;
+                        const searchQueries = [
+                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`,
+                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`
+                        ];
+                        for (let url of searchQueries) {
+                            const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
+                            const data = await res.json();
+                            if (data && data.length > 0) {
+                                geoPoint = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                                break;
+                            }
+                        }
+                    } catch (err) {}
+                }
+
+                if (!geoPoint) {
+                    isPendingSync = true;
+                    geoPoint = [...MUNICIPALITIES[currentMunicipality].coords];
+                }
+
+                activeRouteData.push({
+                    id: Date.now() + Math.random(), // Evitar colisión de IDs en inserciones masivas simultáneas
+                    municipality: currentMunicipality,
+                    street: streetName,
+                    portal: portalNum,
+                    sidewalk: sidewalk,
+                    coords: geoPoint,
+                    pendingSync: isPendingSync
+                });
             }
-            if (!geoPoint) { isPendingSync = true; geoPoint = [...MUNICIPALITIES[currentMunicipality].coords]; }
-            activeRouteData.push({ id: Date.now(), municipality: currentMunicipality, street: streetName, portal: portalNum, sidewalk: sidewalk, coords: geoPoint, pendingSync: isPendingSync });
-            saveStateToLocalStorage(); renderActiveRoute();
-            document.getElementById("routeForm").reset(); document.getElementById("customCoordsInput").value = "";
-            submitBtn.disabled = false; closeAllSidebars();
-            if (!isPendingSync) map.panTo(geoPoint); else syncPendingCoordinates();
+
+            saveStateToLocalStorage();
+            renderActiveRoute();
+
+            // Limpieza del formulario
+            document.getElementById("routeForm").reset();
+            document.getElementById("customCoordsInput").value = "";
+            submitBtn.disabled = false;
+            closeAllSidebars();
+
+            // Sincronizar plano en segundo plano inmediatamente si quedan elementos offline
+            syncPendingCoordinates();
         }
 
         async function syncPendingCoordinates() {
@@ -770,7 +806,6 @@
                 const row = document.createElement("div"); 
                 row.className = `flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 ${segment.pendingSync ? 'border-amber-500' : 'border-blue-900 dark:border-blue-500'} shadow-sm`;
                 
-                // REFACTORIZACIÓN UI: Tarjeta más compacta con botón numérico interactivo
                 row.innerHTML = `
                     <div class="text-xs flex-1 pr-2 truncate">
                         <div class="flex items-center space-x-1">
@@ -824,13 +859,7 @@
             alert("Jornada guardada con éxito.");
         }
 
-        function triggerBackup() {
-            const backupPayload = { activeRoute: activeRouteData, history: JSON.parse(localStorage.getItem("amailia_history") || "[]"), exportedAt: new Date().toISOString() };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload));
-            const downloadAnchor = document.createElement('a'); downloadAnchor.setAttribute("href", dataStr); downloadAnchor.setAttribute("download", `amailia_v${APP_VERSION}_backup.json`);
-            document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
-        }
-
+        document.getElementById("importFileInput").addEventListener("change", handleImportFile);
         function triggerRestore() { document.getElementById("importFileInput").click(); }
         function handleImportFile(event) {
             const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
@@ -840,6 +869,13 @@
                     if (importedData.activeRoute && importedData.history) { activeRouteData = importedData.activeRoute; localStorage.setItem("amailia_history", JSON.stringify(importedData.history)); saveStateToLocalStorage(); renderActiveRoute(); renderHistoryFileList(); updateCallejeroStatusUI(); alert("Backup restaurado."); } else { alert("Formato inválido."); }
                 } catch (err) { alert("Error al importar JSON."); }
             }; reader.readAsText(file);
+        }
+
+        function triggerBackup() {
+            const backupPayload = { activeRoute: activeRouteData, history: JSON.parse(localStorage.getItem("amailia_history") || "[]"), exportedAt: new Date().toISOString() };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload));
+            const downloadAnchor = document.createElement('a'); downloadAnchor.setAttribute("href", dataStr); downloadAnchor.setAttribute("download", `amailia_v${APP_VERSION}_backup.json`);
+            document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
         }
 
         async function checkUpdateOTA() {
