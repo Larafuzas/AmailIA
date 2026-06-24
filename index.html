@@ -3,342 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v5.9.0)</title>
+    <title>AmailIA - Optimización de Reparto (v6.1.0)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
     <meta name="apple-mobile-web-app-title" content="AmailIA">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1e3a8a">
 
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
     <style>
         body { touch-action: pan-x pan-y; }
-        .custom-sidebar { 
-            transition: transform 0.3s ease-in-out; 
-            padding-top: env(safe-area-inset-top, 0px);
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-        }
         
-        .ios-safe-top {
-            top: calc(12px + env(safe-area-inset-top, 0px)) !important;
-        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+        .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
 
-        /* Filtro CSS para Modo Noche del Mapa */
-        .dark-mode-map .leaflet-layer {
-            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-        }
+        .dark .leaflet-layer { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
         
-        /* Estilos para marcadores numéricos de la ruta activa */
         .route-idx-marker {
-            background-color: #1e3a8a;
-            color: #ffffff;
-            border: 2px solid #ffffff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 800;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            background-color: #1e3a8a; color: #ffffff; border: 2px solid #ffffff;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
 
-        /* Estilos para marcadores numéricos del histórico */
         .history-idx-marker {
-            background-color: #dc2626;
-            color: #ffffff;
-            border: 2px solid #ffffff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 800;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            background-color: #dc2626; color: #ffffff; border: 2px solid #ffffff;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
 
-        .map-picking-active {
-            cursor: crosshair !important;
-        }
+        .map-picking-active { cursor: crosshair !important; }
 
+        /* Estilos de la navegación inferior */
+        .nav-item { transition: all 0.2s ease; }
+        .nav-item.active { color: #1e3a8a; }
+        .dark .nav-item.active { color: #60a5fa; }
+        
+        /* Animación del panel inferior */
+        #bottom-sheet { transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
         #printTableContainer { display: none; }
 
         @media print {
-            #menuBtn, #settingsBtn, #exitHistoryBtn, #toastMapPicker, #sidebar, #sidebarSettings, #sidebarOverlay {
-                display: none !important;
-            }
-            #map {
-                position: relative !important;
-                width: 100% !important;
-                height: 45vh !important;
-                inset: 0 !important;
-                page-break-inside: avoid !important;
-            }
-            #printTableContainer {
-                display: block !important;
-                width: 100% !important;
-                margin-top: 20px;
-                font-family: Arial, sans-serif;
-                color: #000000;
-            }
-            body {
-                background: #ffffff !important;
-                color: #000000 !important;
-                overflow: visible !important;
-                height: auto !important;
-            }
-            .print-title {
-                font-size: 20px;
-                font-weight: bold;
-                margin-bottom: 10px;
-                border-bottom: 2px solid #000000;
-                padding-bottom: 5px;
-            }
+            #bottom-sheet, #bottom-nav, #toastMapPicker, .leaflet-control-zoom, #exitHistoryBtn { display: none !important; }
+            #map-wrapper { height: 45vh !important; flex: none !important; position: relative !important; }
+            #printTableContainer { display: block !important; width: 100% !important; margin-top: 20px; font-family: Arial, sans-serif; color: #000; }
+            body { background: #fff !important; color: #000 !important; overflow: visible !important; display: block !important; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th {
-                background-color: #f2f2f2 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                border: 1px solid #dddddd;
-                padding: 8px; font-size: 12px; text-align: left;
-            }
-            td { border: 1px solid #dddddd; padding: 8px; font-size: 13px; }
+            th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; border: 1px solid #ddd; padding: 8px; font-size: 12px; text-align: left; }
+            td { border: 1px solid #ddd; padding: 8px; font-size: 13px; }
             tr { page-break-inside: avoid; }
         }
     </style>
 </head>
-<body class="h-full w-full overflow-hidden bg-gray-100 font-sans text-gray-900 select-none">
+<body class="flex flex-col h-[100dvh] w-full overflow-hidden bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 select-none">
 
-    <div id="map" class="h-full w-full absolute inset-0 z-0"></div>
+    <div id="map-wrapper" class="flex-1 relative z-0 pt-safe w-full">
+        <div id="map" class="h-full w-full"></div>
+        
+        <div id="toastMapPicker" class="absolute top-4 left-1/2 transform -translate-x-1/2 z-[400] bg-blue-950 text-white px-4 py-2 rounded-full shadow-lg flex items-center space-x-2 opacity-0 transition-opacity duration-300 pointer-events-none">
+            <span class="flex h-3 w-3 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            <p class="text-xs font-semibold">Toca el mapa para situar tramo</p>
+        </div>
 
-    <button id="menuBtn" class="ios-safe-top absolute left-4 z-40 bg-white dark:bg-gray-800 p-3.5 rounded-xl shadow-xl flex items-center justify-center border border-gray-200 dark:border-gray-700 active:scale-95 transition-transform" aria-label="Abrir Menú Reparto">
-        <svg class="w-6 h-6 text-blue-900 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
-    </button>
-
-    <button id="settingsBtn" class="ios-safe-top absolute right-4 z-40 bg-white dark:bg-gray-800 p-3.5 rounded-xl shadow-xl flex items-center justify-center border border-gray-200 dark:border-gray-700 active:scale-95 transition-transform" aria-label="Abrir Ajustes">
-        <svg class="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.43l-1.003.767c-.3.23-.452.617-.432 1.004.004.074.006.147.006.22 0 .072-.002.146-.006.22-.02.387.13.773.432 1.003l1.003.767a1.125 1.125 0 0 1 .26 1.43l-1.297 2.247a1.125 1.125 0 0 1-1.37.49l-1.216-.456a1.125 1.125 0 0 0-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281a1.125 1.125 0 0 0-.646-.87a6.57 6.57 0 0 1-.22-.127a1.125 1.125 0 0 0-1.074-.124l-1.217.456a1.125 1.125 0 0 1-1.37-.49l-1.296-2.247a1.125 1.125 0 0 1 .26-1.43l1.003-.767c.301-.23.452-.617-.432-1.004a6.58 6.58 0 0 1-.006-.22c0-.074.003-.147.006-.22.02-.387-.13-.773-.432-1.003l-1.003-.767a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.49l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128c.332-.183.582-.495.645-.869L9.594 3.94Z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-        </svg>
-    </button>
-
-    <button id="exitHistoryBtn" class="ios-safe-top absolute left-1/2 transform -translate-x-1/2 z-40 bg-red-600 text-white font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-2 border border-red-500 active:scale-95 transition-all hidden animate-bounce">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
-        </svg>
-        <span class="text-xs tracking-wider uppercase">Salir del Histórico</span>
-    </button>
-
-    <div id="toastMapPicker" class="ios-safe-top absolute left-20 right-4 z-40 bg-blue-950 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-blue-800 transform -translate-y-32 opacity-0 transition-all duration-300 pointer-events-none">
-        <span class="flex h-3 w-3 relative">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-        </span>
-        <p class="text-xs font-semibold">Toca el punto exacto en el mapa para situar el tramo</p>
+        <button id="exitHistoryBtn" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-[400] bg-red-600 text-white font-bold px-4 py-2 rounded-xl shadow-2xl flex items-center space-x-2 border border-red-500 active:scale-95 transition-all hidden animate-bounce">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
+            <span class="text-xs tracking-wider uppercase">Salir Histórico</span>
+        </button>
     </div>
 
-    <div id="sidebarOverlay" class="absolute inset-0 bg-black/40 z-40 hidden opacity-0 transition-opacity duration-300"></div>
-
-    <aside id="sidebar" class="custom-sidebar fixed inset-y-0 left-0 w-[85%] sm:w-[380px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-50 shadow-2xl flex flex-col justify-between transform -translate-x-full border-r border-gray-200 dark:border-gray-800">
-        <div class="p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
-            <div class="flex items-center space-x-3">
-                <img src="icono.png" alt="Icono" class="w-9 h-9 object-cover rounded-xl shadow-sm bg-gray-200 dark:bg-gray-700" onerror="this.style.opacity='0'">
-                <div>
-                    <h1 class="text-2xl font-extrabold tracking-tight text-blue-900 dark:text-white">AmailIA</h1>
-                    <p class="text-[10px] uppercase tracking-widest text-gray-500 dark:text-gray-400 font-bold">Ruta Operativa en Vivo</p>
-                </div>
-            </div>
-            <button onclick="closeAllSidebars()" class="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
+    <div id="bottom-sheet" class="bg-white dark:bg-gray-900 rounded-t-3xl shadow-[0_-15px_40px_rgba(0,0,0,0.15)] z-40 w-full flex flex-col border-t border-gray-200 dark:border-gray-800 h-[60dvh]">
+        
+        <div class="w-full flex justify-center pt-3 pb-2 shrink-0 cursor-pointer" onclick="switchTab('mapa')">
+            <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-5 space-y-5">
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Municipio de Cobertura</label>
-                <div class="grid grid-cols-3 gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-                    <button onclick="switchMunicipality('catarroja')" id="tab-catarroja" class="tab-btn py-2 text-xs font-bold rounded-lg transition-all bg-white dark:bg-gray-700 shadow-sm text-blue-900 dark:text-white">Catarroja</button>
-                    <button onclick="switchMunicipality('albal')" id="tab-albal" class="tab-btn py-2 text-xs font-semibold rounded-lg transition-all text-gray-600 dark:text-gray-300">Albal</button>
-                    <button onclick="switchMunicipality('massanassa')" id="tab-massanassa" class="tab-btn py-2 text-xs font-semibold rounded-lg transition-all text-gray-600 dark:text-gray-300">Massanassa</button>
-                </div>
+        <div id="view-ruta" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-4 hidden">
+            <div class="grid grid-cols-3 gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shrink-0">
+                <button onclick="switchMunicipality('catarroja')" id="tab-catarroja" class="tab-btn py-2 text-xs font-bold rounded-lg transition-all bg-white dark:bg-gray-700 shadow-sm text-blue-900 dark:text-white">Catarroja</button>
+                <button onclick="switchMunicipality('albal')" id="tab-albal" class="tab-btn py-2 text-xs font-semibold rounded-lg transition-all text-gray-500 dark:text-gray-400">Albal</button>
+                <button onclick="switchMunicipality('massanassa')" id="tab-massanassa" class="tab-btn py-2 text-xs font-semibold rounded-lg transition-all text-gray-500 dark:text-gray-400">Massanassa</button>
             </div>
 
-            <div>
-                <button type="button" onclick="activateMapPickerMode()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 active:scale-[0.99] transition-transform">
-                    <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
-                    <span class="text-xs">Marcar punto con el dedo en el mapa</span>
-                </button>
-                <input type="hidden" id="customCoordsInput" value="">
-            </div>
-
-            <form id="routeForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
-                <div class="relative">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Nombre de la Calle</label>
-                    <input type="text" id="streetInput" autocomplete="off" placeholder="Ej. Camí Reial" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-white" required>
-                    
-                    <div id="autocompleteLoading" class="absolute right-3 top-9 hidden">
-                        <svg class="animate-spin h-5 w-5 text-blue-900 dark:text-blue-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    </div>
-                    <div id="autocompleteList" class="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-48 overflow-y-auto hidden z-50"></div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Portal / Lote (Ej: 21, 23, 25)</label>
-                        <input type="text" id="portalInput" placeholder="Ej. 12 o 21,25,27" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-white" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Acera de Trabajo</label>
-                        <select id="sidewalkInput" class="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-white font-medium">
-                            <option value="ambas">Ambas</option>
-                            <option value="pares">Solo Pares</option>
-                            <option value="impares">Solo Impares</option>
-                        </select>
-                    </div>
-                </div>
-
-                <button type="submit" id="submitBtn" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center space-x-2 active:scale-[0.99] transition-transform">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
-                    <span>Añadir Tramo a la Jornada</span>
-                </button>
-            </form>
-
-            <hr class="border-gray-200 dark:border-gray-800">
-
-            <div class="space-y-2">
-                <button onclick="optimizeRouteLocalTSP()" id="tspOptimizeBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 mb-4 active:scale-[0.98] transition-all">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                    </svg>
-                    <span class="text-xs">Optimizar Secuencia Peatonal (Bloques)</span>
-                </button>
-
-                <button onclick="invertirSentidoRutaCompleta()" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center space-x-2 active:scale-[0.98] transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3M3 12c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M3 12l3 3m-3-3l-3-3" />
-                    </svg>
-                    <span class="text-xs">Invertir Sentido de la Ruta</span>
-                </button>
-
-                <div class="flex items-center justify-between pt-2">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tramos de la Ruta Actual</label>
-                    <button onclick="syncPendingCoordinates()" id="syncQueueBtn" class="hidden text-[11px] bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-2 py-1 rounded-lg flex items-center space-x-1 transition-all">
-                        <svg class="w-3 h-3 animate-pulse" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
-                        <span>Sincronizar Plano</span>
+            <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Añadir Tramos</span>
+                    <button type="button" onclick="activateMapPickerMode()" class="text-[10px] bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-1 px-2 rounded flex items-center space-x-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
+                        <span>En Mapa</span>
                     </button>
                 </div>
-                <div id="liveRouteList" class="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-                    <p class="text-xs text-gray-400 italic text-center py-2">No hay tramos cargados en la jornada.</p>
+                <form id="routeForm" onsubmit="handleFormSubmit(event)" class="space-y-2 relative">
+                    <input type="hidden" id="customCoordsInput" value="">
+                    <input type="text" id="streetInput" autocomplete="off" placeholder="Calle (Ej. Camí Reial)" class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-600 dark:text-white" required>
+                    <div id="autocompleteList" class="absolute top-10 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-40 overflow-y-auto hidden z-50"></div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="portalInput" placeholder="Portal (Lotes: 21,25)" class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-600 dark:text-white" required>
+                        <select id="sidewalkInput" class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-600 dark:text-white">
+                            <option value="ambas">Ambas Aceras</option><option value="pares">Pares</option><option value="impares">Impares</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 rounded-lg shadow flex items-center justify-center space-x-2"><span class="text-xs">Insertar a Ruta</span></button>
+                </form>
+            </div>
+
+            <div>
+                <div class="flex space-x-2 mb-2">
+                    <button onclick="optimizeRouteLocalTSP()" id="tspOptimizeBtn" class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-lg shadow-sm text-xs active:scale-[0.98]">Optimizar (TSP)</button>
+                    <button onclick="invertirSentidoRutaCompleta()" class="flex-1 bg-purple-700 text-white font-bold py-2 rounded-lg shadow-sm text-xs active:scale-[0.98]">Invertir Marcha</button>
                 </div>
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Secuencia Actual <span id="routeCountBadge" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1.5 py-0.5 rounded ml-1">0</span></span>
+                    <button onclick="syncPendingCoordinates()" id="syncQueueBtn" class="hidden text-[10px] bg-amber-500 text-slate-950 font-bold px-2 py-1 rounded animate-pulse">Sincronizar</button>
+                </div>
+                <div id="liveRouteList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1"></div>
             </div>
         </div>
 
-        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-            <button onclick="archiveCurrentJob()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3 px-4 rounded-xl shadow flex items-center justify-center space-x-2">
-                <span>Archivar Jornada en Historial</span>
-            </button>
-        </div>
-    </aside>
-
-
-    <aside id="sidebarSettings" class="custom-sidebar fixed inset-y-0 right-0 w-[85%] sm:w-[380px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-50 shadow-2xl flex flex-col justify-between transform translate-x-full border-l border-gray-200 dark:border-gray-800">
-        <div class="p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
-            <div class="flex items-center space-x-2">
-                <svg class="w-6 h-6 text-blue-900 dark:text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-                <h2 class="text-xl font-bold text-gray-900 dark:text-white">Panel de Control</h2>
+        <div id="view-historial" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-4 hidden">
+            <button onclick="archiveCurrentJob()" class="w-full bg-emerald-600 text-white text-xs font-bold py-3 rounded-xl shadow mt-2">Archivar Jornada Actual</button>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Histórico Guardado</label>
+                <div id="historyFilesContainer" class="space-y-2"></div>
             </div>
-            <button onclick="closeAllSidebars()" class="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-5 space-y-6">
-            <div class="space-y-2">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Exportación Física</label>
-                <button onclick="ejecutarImpresionJornada()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 active:scale-[0.98] transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.82l-.24 2.11A1.23 1.23 0 007.71 17.3h8.58a1.23 1.23 0 001.23-1.37l-.24-2.11M6.72 13.82a3.68 3.33 0 0110.56 0M6.72 13.82H4.47a1.23 1.23 0 00-1.23 1.23v2.45a1.23 1.23 0 001.23 1.23h1.23M17.28 13.82h2.25a1.23 1.23 0 011.23 1.23v2.45a1.23 1.23 0 01-1.23 1.23h-1.23M16.5 6.75H7.5v4.5h9v-4.5z" />
-                    </svg>
-                    <span class="text-xs">Imprimir Mapa y Listado</span>
+        <div id="view-ajustes" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-5 hidden">
+            <div class="mt-2">
+                <button onclick="ejecutarImpresionJornada()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md text-xs flex justify-center items-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.82l-.24 2.11A1.23 1.23 0 007.71 17.3h8.58a1.23 1.23 0 001.23-1.37l-.24-2.11M6.72 13.82a3.68 3.33 0 0110.56 0M6.72 13.82H4.47a1.23 1.23 0 00-1.23 1.23v2.45a1.23 1.23 0 001.23 1.23h1.23M17.28 13.82h2.25a1.23 1.23 0 011.23 1.23v2.45a1.23 1.23 0 01-1.23 1.23h-1.23M16.5 6.75H7.5v4.5h9v-4.5z" /></svg>
+                    <span>Imprimir Hoja de Ruta</span>
                 </button>
             </div>
 
-            <div class="space-y-3">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Callejero Local (Caché Offline)</label>
-                <div class="p-3.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold dark:text-gray-300" id="dbStatusLabel">Municipio: Catarroja</span>
-                        <span id="dbSizeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 dark:text-gray-300">Vacío</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="downloadCallejeroOverpass()" class="text-xs bg-blue-900 hover:bg-blue-800 text-white p-2.5 rounded-lg font-semibold shadow-sm transition-colors">Descargar / Act.</button>
-                        <button onclick="clearCallejeroLocal()" class="text-xs bg-gray-200 dark:bg-gray-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 p-2.5 rounded-lg font-semibold transition-colors">Borrar Memoria</button>
-                    </div>
+            <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Datos Offline (Sin Cobertura)</label>
+                
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-medium dark:text-gray-300">Textos (Calles)</span>
+                    <span id="dbSizeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700">Vacío</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="downloadCallejeroOverpass()" class="text-xs bg-blue-900 text-white py-2 rounded-lg font-semibold">Bajar Calles</button>
+                    <button onclick="clearCallejeroLocal()" class="text-xs bg-gray-200 dark:bg-gray-700 text-red-600 py-2 rounded-lg font-semibold">Borrar</button>
+                </div>
+
+                <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <span class="text-xs font-medium dark:text-gray-300 block mb-2">Imágenes Cartográficas (Área visible)</span>
+                    <button onclick="downloadMapTilesOffline()" id="btnDownloadMap" class="w-full text-xs bg-teal-700 text-white py-2 rounded-lg font-semibold">Descargar Plano Nivel 14-17</button>
                 </div>
             </div>
 
-            <div class="space-y-3">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Historial de Jornadas</label>
-                <div id="historyFilesContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    <p class="text-xs text-gray-400 italic text-center py-2">No hay jornadas archivadas.</p>
-                </div>
-            </div>
-
-            <div class="space-y-2">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Preferencia Visual</label>
-                <div class="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <span class="text-sm font-semibold dark:text-gray-300 flex items-center space-x-2">
-                        <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                        <span>Visión Nocturna / Filtro Dark</span>
-                    </span>
+            <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-semibold dark:text-gray-300">Modo Noche (Mapa y UI)</span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="nightModeToggle" onchange="toggleNightMode()" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        <div class="w-9 h-5 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                 </div>
-            </div>
+                
+                <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <span class="text-xs font-semibold dark:text-gray-300 block mb-2">Copias de Seguridad (JSON)</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="triggerBackup()" class="text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2 rounded-lg font-bold">Exportar</button>
+                        <button onclick="triggerRestore()" class="text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2 rounded-lg font-bold">Importar</button>
+                    </div>
+                </div>
 
-            <div class="space-y-2">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Copia de Seguridad</label>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="triggerBackup()" class="text-xs bg-gray-100 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-2.5 rounded-lg font-bold border border-gray-200 dark:border-gray-700">Exportar (.JSON)</button>
-                    <button onclick="triggerRestore()" class="text-xs bg-gray-100 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-2.5 rounded-lg font-bold border border-gray-200 dark:border-gray-700">Importar Backup</button>
+                <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-950 text-white text-[11px] font-mono py-2 rounded-lg flex items-center justify-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                        <span>Comprobar OTA (v6.1.0)</span>
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-            <button onclick="checkUpdateOTA()" class="w-full bg-gray-950 dark:bg-gray-800 hover:bg-black dark:hover:bg-gray-700 text-white text-[11px] font-mono py-3 px-4 rounded-xl flex items-center justify-between border border-gray-800">
-                <span class="flex items-center space-x-1.5">
-                    <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                    <span>Sincronización OTA</span>
-                </span>
-                <span id="versionBadge" class="bg-blue-900 px-2 py-0.5 rounded text-white font-bold tracking-wider">v5.9.0</span>
-            </button>
-        </div>
-    </aside>
+    <nav id="bottom-nav" class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-50 pb-safe shrink-0 flex justify-around items-center h-16 px-2">
+        <button onclick="switchTab('mapa')" id="nav-mapa" class="nav-item active flex flex-col items-center justify-center w-full h-full text-gray-500 dark:text-gray-400">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+            <span class="text-[10px] font-semibold">Mapa</span>
+        </button>
+        <button onclick="switchTab('ruta')" id="nav-ruta" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-500 dark:text-gray-400">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            <span class="text-[10px] font-semibold">Ruta</span>
+        </button>
+        <button onclick="switchTab('historial')" id="nav-historial" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-500 dark:text-gray-400">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[10px] font-semibold">Historial</span>
+        </button>
+        <button onclick="switchTab('ajustes')" id="nav-ajustes" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-500 dark:text-gray-400">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span class="text-[10px] font-semibold">Ajustes</span>
+        </button>
+    </nav>
 
     <div id="printTableContainer">
-        <div class="print-title">AmailIA Logistics - Hoja de Ruta Activa</div>
-        <div style="font-size: 11px; margin-bottom: 15px;" id="printMetaLabel">Fecha de emisión: 24/06/2026</div>
+        <h2 style="font-size: 20px; font-weight: bold; border-bottom: 2px solid #000; padding-bottom: 5px;">AmailIA - Hoja de Ruta</h2>
+        <div style="font-size: 11px; margin-bottom: 15px;" id="printMetaLabel"></div>
         <table>
-            <thead>
-                <tr>
-                    <th style="width: 8%; text-align: center;">Ord.</th>
-                    <th style="width: 20%;">Municipio</th>
-                    <th style="width: 52%;">Dirección / Calle</th>
-                    <th style="width: 12%; text-align: center;">Portal</th>
-                    <th style="width: 8%; text-align: center;">VºBº</th>
-                </tr>
-            </thead>
+            <thead><tr><th style="width: 8%; text-align: center;">Ord.</th><th style="width: 20%;">Municipio</th><th style="width: 52%;">Dirección / Calle</th><th style="width: 12%; text-align: center;">Portal</th><th style="width: 8%; text-align: center;">VºBº</th></tr></thead>
             <tbody id="printTableBody"></tbody>
         </table>
     </div>
@@ -346,8 +220,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "5.9.0";
-
+        const APP_VERSION = "6.1.0";
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -355,539 +228,382 @@
         };
 
         let currentMunicipality = 'catarroja';
-        let map = null;
+        let map = null, mapTileLayer;
         let activeRouteData = []; 
-        let historyLayersGroup = null; 
-        
-        let routeMarkersGroup = null;
-        let routeLinesGroup = null;
-        let detailPortalsGroup = null;
-        
+        let routeMarkersGroup, routeLinesGroup, detailPortalsGroup, historyLayersGroup;
         let isMapPickingModeActive = false;
-        let autocompleteTimeout = null;
+
+        /* --- UI LOGIC: Pestañas y Bottom Sheet --- */
+        function switchTab(tabId) {
+            // Actualizar iconos nav
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${tabId}`).classList.add('active');
+
+            const sheet = document.getElementById('bottom-sheet');
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+            if (tabId === 'mapa') {
+                sheet.style.height = '0px'; // Colapsar totalmente
+            } else {
+                sheet.style.height = '60dvh'; // Levantar panel
+                document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            }
+
+            // Avisar a Leaflet del redimensionamiento tras la animación
+            setTimeout(() => { if(map) map.invalidateSize(); }, 350);
+        }
+
+        /* --- MAP CACHE SYSTEM (L.TileLayer.Cached) --- */
+        L.TileLayer.Cached = L.TileLayer.extend({
+            createTile: function (coords, done) {
+                var tile = document.createElement('img');
+                var url = this.getTileUrl(coords);
+                tile.alt = '';
+                if ('caches' in window) {
+                    caches.match(url).then(function(response) {
+                        if (response) { response.blob().then(function(blob) { tile.src = URL.createObjectURL(blob); done(null, tile); }); } 
+                        else {
+                            fetch(url).then(res => {
+                                let resClone = res.clone();
+                                caches.open('amailia-maptiles').then(cache => cache.put(url, resClone));
+                                res.blob().then(blob => { tile.src = URL.createObjectURL(blob); done(null, tile); });
+                            }).catch(err => { done(err, tile); });
+                        }
+                    });
+                } else { tile.src = url; done(null, tile); }
+                return tile;
+            }
+        });
 
         document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById("versionBadge").textContent = `v${APP_VERSION}`;
             initLeafletMap();
-            setupUIEventListeners();
             loadStateFromLocalStorage();
             renderActiveRoute();
             renderHistoryFileList();
             updateCallejeroStatusUI();
-            window.addEventListener('online', syncPendingCoordinates);
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.getElementById('nightModeToggle').checked = true; toggleNightMode();
+            }
+            // Arrancar con pestaña Ruta abierta
+            switchTab('ruta');
         });
 
         function initLeafletMap() {
             const initConf = MUNICIPALITIES[currentMunicipality];
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView(initConf.coords, 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
+            mapTileLayer = new L.TileLayer.Cached('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+            
             routeMarkersGroup = L.layerGroup().addTo(map);
             routeLinesGroup = L.layerGroup().addTo(map);
             detailPortalsGroup = L.layerGroup().addTo(map);
             historyLayersGroup = L.layerGroup().addTo(map);
 
-            map.on('zoomend', () => {
-                if(historyLayersGroup.getLayers().length === 0) evaluateDetailPortalsVisibility();
-            });
-            map.on('click', function(e) {
-                if (!isMapPickingModeActive) return;
-                handleMapClickCapture(e.latlng);
-            });
+            map.on('zoomend', () => { if(historyLayersGroup.getLayers().length === 0) evaluateDetailPortalsVisibility(); });
+            map.on('click', function(e) { if (isMapPickingModeActive) handleMapClickCapture(e.latlng); });
         }
 
-        function setupUIEventListeners() {
-            document.getElementById("menuBtn").addEventListener("click", () => openSidebar("sidebar"));
-            document.getElementById("settingsBtn").addEventListener("click", () => openSidebar("sidebarSettings"));
-            document.getElementById("sidebarOverlay").addEventListener("click", closeAllSidebars);
-            document.getElementById("streetInput").addEventListener("input", handleStreetAutocomplete);
-            document.getElementById("exitHistoryBtn").addEventListener("click", exitHistoryVisualizationMode);
-            
-            document.addEventListener("click", (e) => {
-                if (e.target.id !== "streetInput") {
-                    document.getElementById("autocompleteList").classList.add("hidden");
-                }
-            });
-        }
-
-        function openSidebar(id) {
-            closeAllSidebars();
-            const target = document.getElementById(id);
-            const overlay = document.getElementById("sidebarOverlay");
-            if(id === "sidebar") { target.classList.remove("-translate-x-full"); } else { target.classList.remove("translate-x-full"); }
-            overlay.classList.remove("hidden");
-            setTimeout(() => overlay.classList.add("opacity-100"), 10);
-        }
-
-        function closeAllSidebars() {
-            document.getElementById("sidebar").classList.add("-translate-x-full");
-            document.getElementById("sidebarSettings").classList.add("translate-x-full");
-            const overlay = document.getElementById("sidebarOverlay");
-            overlay.classList.remove("opacity-100");
-            setTimeout(() => overlay.classList.add("hidden"), 300);
-        }
-
-        function ejecutarImpresionJornada() {
-            if (activeRouteData.length === 0) return alert("No hay tramos cargados en la jornada actual para imprimir.");
-            closeAllSidebars();
-            const hoy = new Date();
-            document.getElementById("printMetaLabel").textContent = `Fecha de reparto: ${hoy.toLocaleDateString('es-ES')} | Total tramos: ${activeRouteData.length}`;
-            const tbody = document.getElementById("printTableBody");
-            tbody.innerHTML = "";
-
-            activeRouteData.forEach((segment, index) => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td style="text-align: center; font-weight: bold;">${index + 1}</td>
-                    <td style="text-transform: capitalize;">${MUNICIPALITIES[segment.municipality].name}</td>
-                    <td style="font-weight: bold;">${segment.street} <span style="font-size: 10px; font-weight: normal; color: #555;">(${segment.sidewalk.toUpperCase()})</span></td>
-                    <td style="text-align: center; font-weight: bold;">${segment.portal}</td>
-                    <td style="text-align: center;"><span style="display: inline-block; width: 14px; height: 14px; border: 1px solid #000; border-radius: 2px;"></span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-            setTimeout(() => { window.print(); }, 350);
-        }
-
-        function solicitarCambioPosicionDirecto(indexActual) {
-            const totalTramos = activeRouteData.length;
-            const posicionActual = indexActual + 1;
-            const nuevaPosicionRaw = prompt(`Modificar posición de este tramo:\nActualmente está en el puesto ${posicionActual} de ${totalTramos}.\n\nIntroduce el nuevo número de destino (1 al ${totalTramos}):`);
-            if (nuevaPosicionRaw === null) return; 
-            const nuevaPosicion = parseInt(nuevaPosicionRaw, 10);
-            if (isNaN(nuevaPosicion) || nuevaPosicion < 1 || nuevaPosicion > totalTramos) {
-                alert(`Error: Introduce un número válido entre 1 y ${totalTramos}.`);
-                return;
-            }
-            if (nuevaPosicion === posicionActual) return; 
-
-            const indexDestino = nuevaPosicion - 1;
-            const itemAMover = activeRouteData[indexActual];
-            activeRouteData.splice(indexActual, 1);
-            activeRouteData.splice(indexDestino, 0, itemAMover);
-            saveStateToLocalStorage();
-            renderActiveRoute();
-        }
-
-        /* =====================================================================
-           MOTOR LOCAL SÍNCRONO: CLÚSTER DE BLOQUE POR CALLES COMPLETAS
-           ===================================================================== */
-        function calculateHaversineDistance(coords1, coords2) {
-            const R = 6371e3; 
-            const lat1 = coords1[0] * Math.PI / 180; const lat2 = coords2[0] * Math.PI / 180;
-            const deltaLat = (coords2[0] - coords1[0]) * Math.PI / 180;
-            const deltaLon = (coords2[1] - coords1[1]) * Math.PI / 180;
-            const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
-            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))); 
-        }
-
-        function optimizeRouteLocalTSP() {
-            const tramosValidos = activeRouteData.filter(s => !s.pendingSync);
-            if (tramosValidos.length < 2) return alert("Introduce al menos 2 tramos sincronizados para ordenar.");
-
-            const btn = document.getElementById("tspOptimizeBtn");
-            btn.disabled = true;
-
-            let callesMap = {};
-            tramosValidos.forEach(tramo => {
-                let key = tramo.street.trim().toLowerCase();
-                if (!callesMap[key]) callesMap[key] = [];
-                callesMap[key].push(tramo);
-            });
-
-            for (let calle in callesMap) {
-                callesMap[calle].sort((a, b) => a.portal - b.portal);
-            }
-
-            let callesRestantes = Object.keys(callesMap);
-            let rutaOptimizada = [];
-            
-            let calleActualKey = callesRestantes.shift();
-            let listaTramosCalle = callesMap[calleActualKey];
-            
-            rutaOptimizada = rutaOptimizada.concat(listaTramosCalle);
-            let ultimoTramoProcesado = listaTramosCalle[listaTramosCalle.length - 1];
-
-            while (callesRestantes.length > 0) {
-                let indexProximaCalle = 0;
-                let menorDistanciaExtremo = Infinity;
-                let normalOrder = true; 
-
-                for (let i = 0; i < callesRestantes.length; i++) {
-                    let keyCandidata = callesRestantes[i];
-                    let listaCandidata = callesMap[keyCandidata];
-                    
-                    let distAlInicio = calculateHaversineDistance(ultimoTramoProcesado.coords, listaCandidata[0].coords);
-                    let distAlFinal = calculateHaversineDistance(ultimoTramoProcesado.coords, listaCandidata[listaCandidata.length - 1].coords);
-
-                    if (distAlInicio < menorDistanciaExtremo) {
-                        menorDistanciaExtremo = distAlInicio;
-                        indexProximaCalle = i;
-                        normalOrder = true;
-                    }
-                    if (distAlFinal < menorDistanciaExtremo) {
-                        menorDistanciaExtremo = distAlFinal;
-                        indexProximaCalle = i;
-                        normalOrder = false;
-                    }
-                }
-
-                let proximaCalleKey = callesRestantes.splice(indexProximaCalle, 1)[0];
-                let bloquesCalle = callesMap[proximaCalleKey];
-
-                if (!normalOrder) { bloquesCalle.reverse(); }
-
-                rutaOptimizada = rutaOptimizada.concat(bloquesCalle);
-                ultimoTramoProcesado = bloquesCalle[bloquesCalle.length - 1];
-            }
-
-            const tramosOffline = activeRouteData.filter(s => s.pendingSync);
-            activeRouteData = [...rutaOptimizada, ...tramosOffline];
-
-            saveStateToLocalStorage();
-            renderActiveRoute();
-            btn.disabled = false;
-            closeAllSidebars();
-            
-            if(rutaOptimizada.length > 0) map.fitBounds(rutaOptimizada.map(s => s.coords), { padding: [40, 40] });
-        }
-
-        function invertirSentidoRutaCompleta() {
-            if (activeRouteData.length < 2) return alert("No hay suficientes puntos para invertir la marcha.");
-            activeRouteData.reverse();
-            saveStateToLocalStorage();
-            renderActiveRoute();
-            closeAllSidebars();
-        }
-
-        /* =====================================================================
-           AUTOCOMPLETADO, GEOCODIFICACIÓN Y ARCHIVADO ORIGINAL CONSOLIDADO
-           ===================================================================== */
-        function activateMapPickerMode() {
-            isMapPickingModeActive = true; closeAllSidebars();
-            document.getElementById("map").classList.add("map-picking-active");
-            const toast = document.getElementById("toastMapPicker");
-            toast.classList.remove("-translate-y-32", "opacity-0"); toast.classList.add("translate-y-0", "opacity-100");
-        }
-
-        function handleMapClickCapture(latlng) {
-            isMapPickingModeActive = false; document.getElementById("map").classList.remove("map-picking-active");
-            const toast = document.getElementById("toastMapPicker");
-            toast.classList.remove("translate-y-0", "opacity-100"); toast.classList.add("-translate-y-32", "opacity-0");
-            document.getElementById("customCoordsInput").value = JSON.stringify([latlng.lat, latlng.lng]);
-            document.getElementById("streetInput").value = "Punto marcado en Mapa";
-            openSidebar("sidebar"); document.getElementById("portalInput").focus();
-        }
-
+        /* --- LÓGICA CORE: Tramos, Formularios, TSP --- */
         function switchMunicipality(muniKey) {
-            if (!MUNICIPALITIES[muniKey]) return;
             currentMunicipality = muniKey;
             document.querySelectorAll(".tab-btn").forEach(btn => {
                 btn.classList.remove("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
-                btn.classList.add("text-gray-600", "dark:text-gray-300");
+                btn.classList.add("text-gray-500", "dark:text-gray-400");
             });
             document.getElementById(`tab-${muniKey}`).classList.add("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
-            map.flyTo(MUNICIPALITIES[muniKey].coords, 15, { animate: true, duration: 1.2 });
-            document.getElementById("routeForm").reset(); document.getElementById("customCoordsInput").value = "";
+            map.flyTo(MUNICIPALITIES[muniKey].coords, 15, { animate: true, duration: 1 });
             updateCallejeroStatusUI();
         }
 
-        function handleStreetAutocomplete(e) {
-            const query = e.target.value.trim().toLowerCase();
-            const listContainer = document.getElementById("autocompleteList");
-            const loadingSpinner = document.getElementById("autocompleteLoading");
-            clearTimeout(autocompleteTimeout);
-            if (query.length < 3 || query === "punto marcado en mapa") { listContainer.innerHTML = ""; listContainer.classList.add("hidden"); return; }
-            if (!navigator.onLine) { renderOfflineSuggestions(query, listContainer); return; }
-
-            autocompleteTimeout = setTimeout(async () => {
-                loadingSpinner.classList.remove("hidden");
-                try {
-                    const targetMuni = MUNICIPALITIES[currentMunicipality].name;
-                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, ${targetMuni}, Valencia&addressdetails=1&limit=6`;
-                    const response = await fetch(url, { headers: { 'Accept-Language': 'es', 'User-Agent': 'AmailIA-Logistics-App' } });
-                    const data = await response.json();
-                    listContainer.innerHTML = "";
-                    if (!data || data.length === 0) { renderOfflineSuggestions(query, listContainer); return; }
-                    const uniqueRoads = new Set();
-                    data.forEach(item => {
-                        const displayName = item.address.road || item.display_name.split(',')[0];
-                        if (displayName && !uniqueRoads.has(displayName)) { uniqueRoads.add(displayName); injectAutocompleteRow(displayName, listContainer); }
-                    });
-                    uniqueRoads.size > 0 ? listContainer.classList.remove("hidden") : listContainer.classList.add("hidden");
-                } catch (error) { renderOfflineSuggestions(query, listContainer); } finally { loadingSpinner.classList.add("hidden"); }
-            }, 400);
+        function activateMapPickerMode() {
+            isMapPickingModeActive = true; 
+            switchTab('mapa'); // Colapsar para ver el mapa entero
+            document.getElementById("map").classList.add("map-picking-active");
+            document.getElementById("toastMapPicker").classList.replace("opacity-0", "opacity-100");
         }
 
-        function renderOfflineSuggestions(query, container) {
-            container.innerHTML = "";
-            const localData = localStorage.getItem(`amailia_db_vias_${currentMunicipality}`);
-            if(!localData) return container.classList.add("hidden");
-            const calles = JSON.parse(localData);
-            const filtradas = calles.filter(c => c.toLowerCase().includes(query)).slice(0, 6);
-            if(filtradas.length === 0) return container.classList.add("hidden");
-            filtradas.forEach(calle => injectAutocompleteRow(calle, container));
-            container.classList.remove("hidden");
+        function handleMapClickCapture(latlng) {
+            isMapPickingModeActive = false; 
+            document.getElementById("map").classList.remove("map-picking-active");
+            document.getElementById("toastMapPicker").classList.replace("opacity-100", "opacity-0");
+            document.getElementById("customCoordsInput").value = JSON.stringify([latlng.lat, latlng.lng]);
+            document.getElementById("streetInput").value = "Punto marcado en Mapa";
+            switchTab('ruta'); // Levantar panel de nuevo
+            document.getElementById("portalInput").focus();
         }
 
-        function injectAutocompleteRow(text, container) {
-            const row = document.createElement("div");
-            row.className = "px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm cursor-pointer border-b border-gray-100 dark:border-gray-700 dark:text-gray-200 font-medium";
-            row.textContent = text;
-            row.addEventListener("click", () => { document.getElementById("streetInput").value = text; document.getElementById("customCoordsInput").value = ""; container.classList.add("hidden"); });
-            container.appendChild(row);
-        }
-
-        async function downloadCallejeroOverpass() {
-            if (!navigator.onLine) return alert("Se requiere conexión de datos activa para indexar el callejero.");
-            const label = document.getElementById("dbSizeBadge"); label.textContent = "Descargando..."; label.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold";
-            const query = `[out:json];area["name"="${MUNICIPALITIES[currentMunicipality].name}"]["admin_level"="8"]->.searchArea;(way["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary"](area.searchArea););out tags;`;
-            try {
-                const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
-                if (!response.ok) throw new Error("API Limit");
-                const data = await response.json(); const uniqueVias = new Set();
-                data.elements.forEach(el => { if (el.tags && el.tags.name) uniqueVias.add(el.tags.name.trim()); });
-                const sortedVias = Array.from(uniqueVias).sort((a, b) => a.localeCompare(b, 'es'));
-                localStorage.setItem(`amailia_db_vias_${currentMunicipality}`, JSON.stringify(sortedVias));
-                alert(`Indexación completada: ${sortedVias.length} calles cacheadas.`); updateCallejeroStatusUI();
-            } catch (err) { alert("Servidor saturado. Inténtalo más tarde."); updateCallejeroStatusUI(); }
-        }
-
-        function clearCallejeroLocal() { localStorage.removeItem(`amailia_db_vias_${currentMunicipality}`); updateCallejeroStatusUI(); }
-
-        function updateCallejeroStatusUI() {
-            document.getElementById("dbStatusLabel").textContent = `Municipio: ${MUNICIPALITIES[currentMunicipality].name}`;
-            const localData = localStorage.getItem(`amailia_db_vias_${currentMunicipality}`);
-            const badge = document.getElementById("dbSizeBadge");
-            if(localData) {
-                const arr = JSON.parse(localData); const sizeKb = (new Blob([localData]).size / 1024).toFixed(1);
-                badge.textContent = `${arr.length} vías (${sizeKb} KB)`; badge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-green-600 text-white font-bold";
-            } else { badge.textContent = "Sin Datos"; badge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-red-600 text-white font-bold"; }
-        }
-
-        function renderHistoryFileList() {
-            const container = document.getElementById("historyFilesContainer"); container.innerHTML = "";
-            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
-            if (history.length === 0) { container.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-2">No hay jornadas archivadas.</p>`; return; }
-            history.slice().reverse().forEach((job, revIndex) => {
-                const originalIndex = history.length - 1 - revIndex; const dateObj = new Date(job.date);
-                const card = document.createElement("div"); card.className = "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors";
-                card.innerHTML = `<div class="text-xs flex-1 cursor-pointer" onclick="viewHistoryOnMap(${originalIndex})"><p class="font-bold dark:text-white">📅 RUTA ${dateObj.toLocaleDateString('es-ES')}</p><p class="text-[10px] text-gray-500">Archivado: ${dateObj.toLocaleTimeString('es-ES')} • ${job.data.length} tramos</p></div><button onclick="deleteHistoryJob(${originalIndex})" class="text-gray-400 hover:text-red-500 p-1 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>`;
-                container.appendChild(card);
-            });
-        }
-
-        function viewHistoryOnMap(index) {
-            const history = JSON.parse(localStorage.getItem("amailia_history") || "[]"); const job = history[index]; if(!job || job.data.length === 0) return;
-            closeAllSidebars(); historyLayersGroup.clearLayers();
-            map.removeLayer(routeMarkersGroup); map.removeLayer(routeLinesGroup); map.removeLayer(detailPortalsGroup);
-            const polylinePoints = []; const validSegments = job.data.filter(s => s.coords && s.coords.length === 2);
-            validSegments.forEach((segment, idx) => {
-                polylinePoints.push(segment.coords);
-                const marker = L.marker(segment.coords, { icon: L.divIcon({ className: 'history-idx-marker', html: `<span>${idx + 1}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] }) }).bindPopup(`<b>[HIST] ${segment.street}, Nº ${segment.portal}</b>`);
-                historyLayersGroup.addLayer(marker);
-            });
-            if (polylinePoints.length > 1) { L.polyline(polylinePoints, { color: '#dc2626', weight: 4, opacity: 0.9, dashArray: '6, 8' }).addTo(historyLayersGroup); }
-            if(polylinePoints.length > 0) map.fitBounds(L.polyline(polylinePoints).getBounds(), { padding: [50, 50] });
-            document.getElementById("exitHistoryBtn").classList.remove("hidden");
-        }
-
-        function exitHistoryVisualizationMode() {
-            historyLayersGroup.clearLayers(); map.addLayer(routeMarkersGroup); map.addLayer(routeLinesGroup); map.addLayer(detailPortalsGroup);
-            document.getElementById("exitHistoryBtn").classList.add("hidden"); map.panTo(MUNICIPALITIES[currentMunicipality].coords); evaluateDetailPortalsVisibility();
-        }
-
-        function deleteHistoryJob(index) { if(!confirm("¿Eliminar del historial permanente?")) return; let history = JSON.parse(localStorage.getItem("amailia_history") || "[]"); history.splice(index, 1); localStorage.setItem("amailia_history", JSON.stringify(history)); renderHistoryFileList(); }
-
-        /* =====================================================================
-           FLUJO DE INSERCIÓN ADAPTADO: PROCESAMIENTO POR LOTES (BULK INPUT)
-           ===================================================================== */
         async function handleFormSubmit(event) {
             event.preventDefault();
             const submitBtn = document.getElementById("submitBtn");
             const streetName = document.getElementById("streetInput").value.trim();
-            const portalInputRaw = document.getElementById("portalInput").value.trim();
+            const portalesLote = document.getElementById("portalInput").value.split(',').map(p => p.trim()).filter(p => p !== "");
             const sidewalk = document.getElementById("sidewalkInput").value;
             const customCoordsRaw = document.getElementById("customCoordsInput").value;
-
             submitBtn.disabled = true;
 
-            // Separar la cadena de entrada por comas para soportar lotes de portales
-            const portalesLote = portalInputRaw.split(',').map(p => p.trim()).filter(p => p !== "");
-
-            // Bucle secuencial atómico por cada portal del lote
             for (let portalToken of portalesLote) {
                 const portalNum = parseInt(portalToken, 10);
-                if (isNaN(portalNum)) continue; // Ignorar tokens mal formateados
+                if (isNaN(portalNum)) continue;
+                let geoPoint = null; let isPendingSync = false;
 
-                let geoPoint = null;
-                let isPendingSync = false;
-
-                if (customCoordsRaw) {
-                    geoPoint = JSON.parse(customCoordsRaw);
-                } else if (navigator.onLine) {
+                if (customCoordsRaw) { geoPoint = JSON.parse(customCoordsRaw); } 
+                else if (navigator.onLine) {
                     try {
-                        const targetMuni = MUNICIPALITIES[currentMunicipality].name;
-                        const searchQueries = [
-                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`,
-                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`
-                        ];
-                        for (let url of searchQueries) {
-                            const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
-                            const data = await res.json();
-                            if (data && data.length > 0) {
-                                geoPoint = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                                break;
-                            }
-                        }
-                    } catch (err) {}
-                }
-
-                if (!geoPoint) {
-                    isPendingSync = true;
-                    geoPoint = [...MUNICIPALITIES[currentMunicipality].coords];
-                }
-
-                activeRouteData.push({
-                    id: Date.now() + Math.random(), // Evitar colisión de IDs en inserciones masivas simultáneas
-                    municipality: currentMunicipality,
-                    street: streetName,
-                    portal: portalNum,
-                    sidewalk: sidewalk,
-                    coords: geoPoint,
-                    pendingSync: isPendingSync
-                });
-            }
-
-            saveStateToLocalStorage();
-            renderActiveRoute();
-
-            // Limpieza del formulario
-            document.getElementById("routeForm").reset();
-            document.getElementById("customCoordsInput").value = "";
-            submitBtn.disabled = false;
-            closeAllSidebars();
-
-            // Sincronizar plano en segundo plano inmediatamente si quedan elementos offline
-            syncPendingCoordinates();
-        }
-
-        async function syncPendingCoordinates() {
-            if (!navigator.onLine) return; let recordsChanged = false;
-            for (let segment of activeRouteData) {
-                if (segment.pendingSync) {
-                    try {
-                        const targetMuni = MUNICIPALITIES[segment.municipality].name;
-                        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(segment.street)}+${segment.portal},+${encodeURIComponent(targetMuni)},+Valencia&limit=1`, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
+                        const mName = MUNICIPALITIES[currentMunicipality].name;
+                        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${mName},+Valencia&limit=1`);
                         const data = await res.json();
-                        if (data && data.length > 0) { segment.coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; segment.pendingSync = false; recordsChanged = true; }
+                        if (data && data.length > 0) geoPoint = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
                     } catch (err) {}
                 }
+                if (!geoPoint) { isPendingSync = true; geoPoint = [...MUNICIPALITIES[currentMunicipality].coords]; }
+                activeRouteData.push({ id: Date.now() + Math.random(), municipality: currentMunicipality, street: streetName, portal: portalNum, sidewalk: sidewalk, coords: geoPoint, pendingSync: isPendingSync });
             }
-            if (recordsChanged) { saveStateToLocalStorage(); renderActiveRoute(); }
+
+            saveStateToLocalStorage(); renderActiveRoute();
+            document.getElementById("routeForm").reset(); document.getElementById("customCoordsInput").value = "";
+            submitBtn.disabled = false; syncPendingCoordinates();
         }
 
-        function removeSegment(id) { activeRouteData = activeRouteData.filter(s => s.id !== id); saveStateToLocalStorage(); renderActiveRoute(); }
-        
         function renderActiveRoute() {
             routeMarkersGroup.clearLayers(); routeLinesGroup.clearLayers(); detailPortalsGroup.clearLayers();
             const listContainer = document.getElementById("liveRouteList"); listContainer.innerHTML = "";
-            if (activeRouteData.length === 0) { listContainer.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-2">No hay tramos cargados.</p>`; document.getElementById("syncQueueBtn").classList.add("hidden"); return; }
+            document.getElementById("routeCountBadge").textContent = activeRouteData.length;
+
+            if (activeRouteData.length === 0) { listContainer.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-2">Ruta vacía.</p>`; document.getElementById("syncQueueBtn").classList.add("hidden"); return; }
 
             const polylinePoints = []; let pendingSyncCount = 0;
             activeRouteData.forEach((segment, index) => {
-                const stepNumber = index + 1; if (segment.pendingSync) pendingSyncCount++; else polylinePoints.push(segment.coords);
+                const step = index + 1;
+                if (segment.pendingSync) pendingSyncCount++; else polylinePoints.push(segment.coords);
 
                 if (!segment.pendingSync) {
-                    const marker = L.marker(segment.coords, { icon: L.divIcon({ className: 'route-idx-marker', html: `<span>${stepNumber}</span>`, iconSize: [30, 30], iconAnchor: [15, 15] }) }).bindPopup(`<b>Tramo #${stepNumber}</b><br>${segment.street}, No. ${segment.portal}`);
-                    routeMarkersGroup.addLayer(marker); generateMicroPortals(segment.coords, segment.portal, segment.sidewalk);
+                    L.marker(segment.coords, { icon: L.divIcon({ className: 'route-idx-marker', html: `<span>${step}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] }) }).bindPopup(`<b>Tramo #${step}</b><br>${segment.street}, Nº${segment.portal}`).addTo(routeMarkersGroup);
+                    generateMicroPortals(segment.coords, segment.portal, segment.sidewalk);
                 }
 
                 const row = document.createElement("div"); 
-                row.className = `flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 ${segment.pendingSync ? 'border-amber-500' : 'border-blue-900 dark:border-blue-500'} shadow-sm`;
-                
-                row.innerHTML = `
-                    <div class="text-xs flex-1 pr-2 truncate">
-                        <div class="flex items-center space-x-1">
-                            <button onclick="solicitarCambioPosicionDirecto(${index})" class="bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 font-extrabold px-2 py-0.5 rounded text-[11px] hover:bg-blue-200 active:scale-95 transition-all shadow-sm">
-                                ${stepNumber}
-                            </button>
-                            <p class="font-bold dark:text-white truncate">${segment.street}</p>
-                            ${segment.pendingSync ? `<span class="bg-amber-500/20 text-amber-600 font-bold text-[9px] px-1 rounded animate-pulse">Offline</span>` : ''}
-                        </div>
-                        <p class="text-[10px] text-gray-500 mt-0.5 pl-6">Portal: ${segment.portal} • Acera: ${segment.sidewalk}</p>
-                    </div>
-                    <button onclick="removeSegment(${segment.id})" class="text-red-400 hover:text-red-600 p-1.5 ml-1 transition-colors" aria-label="Eliminar">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
-                `;
+                row.className = `flex justify-between items-center p-2 bg-white dark:bg-gray-900 rounded-lg border-l-4 ${segment.pendingSync ? 'border-amber-500' : 'border-blue-700'} mb-1.5 shadow-sm`;
+                row.innerHTML = `<div class="text-xs truncate flex items-center space-x-2"><button onclick="solicitarCambioPosicionDirecto(${index})" class="bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-200 font-bold px-2 py-0.5 rounded">${step}</button><div class="truncate"><p class="font-bold dark:text-gray-200">${segment.street}</p><p class="text-[10px] text-gray-500">Nº${segment.portal} • ${segment.sidewalk}</p></div></div><button onclick="removeSegment(${segment.id})" class="text-red-400 p-1">x</button>`;
                 listContainer.appendChild(row);
             });
 
             const syncBtn = document.getElementById("syncQueueBtn");
-            if (pendingSyncCount > 0) { syncBtn.classList.remove("hidden"); syncBtn.querySelector("span").textContent = `Ubicar (${pendingSyncCount})`; } else { syncBtn.classList.add("hidden"); }
-            if (polylinePoints.length > 1) { L.polyline(polylinePoints, { color: '#1e3a8a', weight: 4, opacity: 0.85, dashArray: '6, 10', lineJoin: 'round' }).addTo(routeLinesGroup); }
+            if (pendingSyncCount > 0) { syncBtn.classList.remove("hidden"); syncBtn.textContent = `Sync (${pendingSyncCount})`; } else { syncBtn.classList.add("hidden"); }
+            if (polylinePoints.length > 1) L.polyline(polylinePoints, { color: '#1e3a8a', weight: 4, opacity: 0.8, dashArray: '6, 10' }).addTo(routeLinesGroup);
             evaluateDetailPortalsVisibility();
         }
 
-        function generateMicroPortals(centerCoords, startPortal, sidewalkMode) {
-            const numPortalsToSimulate = 6;
-            for (let i = 0; i < numPortalsToSimulate; i++) {
-                let currentNum = startPortal + i; if (sidewalkMode === 'pares' && currentNum % 2 !== 0) continue; if (sidewalkMode === 'impares' && currentNum % 2 === 0) continue;
-                const latShift = (i * 0.00015); const lngShift = (currentNum % 2 === 0 ? 0.0002 : -0.0002);
-                const circleMarker = L.circleMarker([centerCoords[0] + latShift, centerCoords[1] + lngShift], { radius: 6, fillColor: (currentNum % 2 === 0) ? '#22c55e' : '#ef4444', color: '#ffffff', weight: 1.5, fillOpacity: 0.9 }).bindTooltip(`Portal ${currentNum}`, { permanent: false, direction: 'top' });
-                detailPortalsGroup.addLayer(circleMarker);
+        function solicitarCambioPosicionDirecto(indexActual) {
+            const nuevaPos = prompt(`Mover tramo ${indexActual + 1} de ${activeRouteData.length} a la posición:`);
+            if(!nuevaPos) return; const np = parseInt(nuevaPos, 10);
+            if(isNaN(np) || np < 1 || np > activeRouteData.length) return alert("Posición inválida");
+            const item = activeRouteData.splice(indexActual, 1)[0];
+            activeRouteData.splice(np - 1, 0, item);
+            saveStateToLocalStorage(); renderActiveRoute();
+        }
+
+        async function syncPendingCoordinates() {
+            if (!navigator.onLine) return; let changed = false;
+            for (let segment of activeRouteData) {
+                if (segment.pendingSync) {
+                    try {
+                        const mName = MUNICIPALITIES[segment.municipality].name;
+                        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(segment.street)}+${segment.portal},+${mName},+Valencia&limit=1`);
+                        const data = await res.json();
+                        if (data && data.length > 0) { segment.coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; segment.pendingSync = false; changed = true; }
+                    } catch (err) {}
+                }
+            }
+            if (changed) { saveStateToLocalStorage(); renderActiveRoute(); }
+        }
+
+        function generateMicroPortals(coords, start, mode) {
+            for (let i = 0; i < 4; i++) {
+                let curr = start + i; if (mode === 'pares' && curr % 2 !== 0) continue; if (mode === 'impares' && curr % 2 === 0) continue;
+                L.circleMarker([coords[0] + (i * 0.00015), coords[1] + (curr % 2 === 0 ? 0.0002 : -0.0002)], { radius: 5, fillColor: curr % 2 === 0 ? '#22c55e' : '#ef4444', color: '#fff', weight: 1, fillOpacity: 0.8 }).addTo(detailPortalsGroup);
             }
         }
 
         function evaluateDetailPortalsVisibility() {
             if(document.getElementById("exitHistoryBtn").classList.contains("hidden")) {
-                if (map.getZoom() >= 17) { if (!map.hasLayer(detailPortalsGroup)) map.addLayer(detailPortalsGroup); } else { if (map.hasLayer(detailPortalsGroup)) map.removeLayer(detailPortalsGroup); }
+                if (map.getZoom() >= 17) { if (!map.hasLayer(detailPortalsGroup)) map.addLayer(detailPortalsGroup); } 
+                else { if (map.hasLayer(detailPortalsGroup)) map.removeLayer(detailPortalsGroup); }
             }
         }
 
-        function toggleNightMode() { const isDark = document.getElementById("nightModeToggle").checked; const mapContainer = document.getElementById("map"); if (isDark) { document.documentElement.classList.add("dark"); mapContainer.classList.add("dark-mode-map"); } else { document.documentElement.classList.remove("dark"); mapContainer.classList.remove("dark-mode-map"); } }
-        function saveStateToLocalStorage() { localStorage.setItem("amailia_active_route", JSON.stringify(activeRouteData)); localStorage.setItem("amailia_current_muni", currentMunicipality); }
-        function loadStateFromLocalStorage() { const savedRoute = localStorage.getItem("amailia_active_route"); const savedMuni = localStorage.getItem("amailia_current_muni"); if (savedRoute) activeRouteData = JSON.parse(savedRoute); if (savedMuni) { currentMunicipality = savedMuni; switchMunicipality(currentMunicipality); } }
+        function removeSegment(id) { activeRouteData = activeRouteData.filter(s => s.id !== id); saveStateToLocalStorage(); renderActiveRoute(); }
+        function invertirSentidoRutaCompleta() { activeRouteData.reverse(); saveStateToLocalStorage(); renderActiveRoute(); }
 
-        function archiveCurrentJob() {
-            if (activeRouteData.length === 0) return alert("No hay datos para archivar.");
-            let history = JSON.parse(localStorage.getItem("amailia_history") || "[]");
-            history.push({ date: new Date().toISOString(), data: activeRouteData });
-            localStorage.setItem("amailia_history", JSON.stringify(history));
-            activeRouteData = []; saveStateToLocalStorage(); renderActiveRoute(); renderHistoryFileList(); closeAllSidebars();
-            alert("Jornada guardada con éxito.");
+        /* ALGORITMO TSP (Haversine) */
+        function calculateHaversineDistance(c1, c2) {
+            const R = 6371e3; const lat1 = c1[0] * Math.PI / 180; const lat2 = c2[0] * Math.PI / 180;
+            const a = Math.sin((c2[0] - c1[0]) * Math.PI / 180 / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin((c2[1] - c1[1]) * Math.PI / 180 / 2) ** 2;
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))); 
+        }
+        function optimizeRouteLocalTSP() {
+            const valid = activeRouteData.filter(s => !s.pendingSync);
+            if (valid.length < 2) return alert("Introduce 2 tramos sincronizados.");
+            let callesMap = {}; valid.forEach(t => { let k = t.street.trim().toLowerCase(); if (!callesMap[k]) callesMap[k] = []; callesMap[k].push(t); });
+            for (let c in callesMap) callesMap[c].sort((a, b) => a.portal - b.portal);
+            let restantes = Object.keys(callesMap); let ruta = [];
+            let key = restantes.shift(); let lista = callesMap[key]; ruta = ruta.concat(lista);
+            let ult = lista[lista.length - 1];
+            while (restantes.length > 0) {
+                let idx = 0, minD = Infinity, normal = true;
+                for (let i = 0; i < restantes.length; i++) {
+                    let cand = callesMap[restantes[i]];
+                    let dIni = calculateHaversineDistance(ult.coords, cand[0].coords);
+                    let dFin = calculateHaversineDistance(ult.coords, cand[cand.length - 1].coords);
+                    if (dIni < minD) { minD = dIni; idx = i; normal = true; }
+                    if (dFin < minD) { minD = dFin; idx = i; normal = false; }
+                }
+                let kProx = restantes.splice(idx, 1)[0]; let blq = callesMap[kProx];
+                if (!normal) blq.reverse();
+                ruta = ruta.concat(blq); ult = blq[blq.length - 1];
+            }
+            activeRouteData = [...ruta, ...activeRouteData.filter(s => s.pendingSync)];
+            saveStateToLocalStorage(); renderActiveRoute(); map.fitBounds(ruta.map(s => s.coords), { padding: [40, 40] }); switchTab('mapa');
         }
 
-        document.getElementById("importFileInput").addEventListener("change", handleImportFile);
-        function triggerRestore() { document.getElementById("importFileInput").click(); }
-        function handleImportFile(event) {
-            const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (importedData.activeRoute && importedData.history) { activeRouteData = importedData.activeRoute; localStorage.setItem("amailia_history", JSON.stringify(importedData.history)); saveStateToLocalStorage(); renderActiveRoute(); renderHistoryFileList(); updateCallejeroStatusUI(); alert("Backup restaurado."); } else { alert("Formato inválido."); }
-                } catch (err) { alert("Error al importar JSON."); }
-            }; reader.readAsText(file);
+        /* --- HISTORIAL Y ARCHIVADO --- */
+        function archiveCurrentJob() {
+            if (activeRouteData.length === 0) return alert("Sin datos.");
+            let h = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            h.push({ date: new Date().toISOString(), data: activeRouteData });
+            localStorage.setItem("amailia_history", JSON.stringify(h));
+            activeRouteData = []; saveStateToLocalStorage(); renderActiveRoute(); renderHistoryFileList();
+            alert("Guardado.");
+        }
+        function renderHistoryFileList() {
+            const container = document.getElementById("historyFilesContainer"); container.innerHTML = "";
+            const h = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            if (h.length === 0) { container.innerHTML = `<p class="text-xs text-gray-400 text-center py-2">No hay rutas archivadas.</p>`; return; }
+            h.slice().reverse().forEach((job, revIdx) => {
+                const idx = h.length - 1 - revIdx; const d = new Date(job.date);
+                const div = document.createElement("div"); div.className = "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700";
+                div.innerHTML = `<div class="text-xs cursor-pointer flex-1" onclick="viewHistoryOnMap(${idx})"><p class="font-bold dark:text-white">📅 ${d.toLocaleDateString()}</p><p class="text-[10px] text-gray-500">${job.data.length} tramos • ${d.toLocaleTimeString()}</p></div><button onclick="deleteHistoryJob(${idx})" class="text-red-400 px-2">x</button>`;
+                container.appendChild(div);
+            });
+        }
+        function viewHistoryOnMap(index) {
+            const job = JSON.parse(localStorage.getItem("amailia_history"))[index]; if(!job) return;
+            switchTab('mapa'); historyLayersGroup.clearLayers();
+            map.removeLayer(routeMarkersGroup); map.removeLayer(routeLinesGroup); map.removeLayer(detailPortalsGroup);
+            let pts = [];
+            job.data.filter(s=>s.coords).forEach((s, i) => {
+                pts.push(s.coords);
+                L.marker(s.coords, { icon: L.divIcon({ className: 'history-idx-marker', html: `<span>${i+1}</span>`, iconSize: [26, 26] }) }).addTo(historyLayersGroup);
+            });
+            if(pts.length>1) L.polyline(pts, {color: '#dc2626', weight:4}).addTo(historyLayersGroup);
+            if(pts.length>0) map.fitBounds(L.polyline(pts).getBounds(), {padding:[50,50]});
+            document.getElementById("exitHistoryBtn").classList.remove("hidden");
+        }
+        document.getElementById("exitHistoryBtn").addEventListener("click", () => {
+            historyLayersGroup.clearLayers(); map.addLayer(routeMarkersGroup); map.addLayer(routeLinesGroup); map.addLayer(detailPortalsGroup);
+            document.getElementById("exitHistoryBtn").classList.add("hidden"); switchTab('historial');
+        });
+        function deleteHistoryJob(idx) { if(!confirm("¿Borrar?")) return; let h = JSON.parse(localStorage.getItem("amailia_history")); h.splice(idx,1); localStorage.setItem("amailia_history", JSON.stringify(h)); renderHistoryFileList(); }
+
+        /* --- OFFLINE, BACKUP E IMPRESIÓN --- */
+        async function downloadMapTilesOffline() {
+            if (!('caches' in window)) return alert("Cache API no soportada.");
+            if (!navigator.onLine) return alert("Conecta a internet primero.");
+            const bounds = map.getBounds(); const btn = document.getElementById("btnDownloadMap");
+            const orig = btn.innerText; btn.innerText = "Calculando..."; btn.disabled = true;
+            const lon2tile = (lon, z) => (Math.floor((lon + 180) / 360 * Math.pow(2, z)));
+            const lat2tile = (lat, z) => (Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z)));
+            let urls = [];
+            [14, 15, 16, 17].forEach(z => {
+                for (let x = lon2tile(bounds.getWest(), z); x <= lon2tile(bounds.getEast(), z); x++) {
+                    for (let y = lat2tile(bounds.getNorth(), z); y <= lat2tile(bounds.getSouth(), z); y++) {
+                        urls.push(`https://${['a','b','c'][Math.floor(Math.random()*3)]}.tile.openstreetmap.org/${z}/${x}/${y}.png`);
+                    }
+                }
+            });
+            if(urls.length > 500 && !confirm(`¿Descargar ${urls.length} teselas?`)) { btn.innerText = orig; btn.disabled = false; return; }
+            btn.innerText = `0/${urls.length}`; let c = 0;
+            try {
+                const cache = await caches.open('amailia-maptiles');
+                for (let i = 0; i < urls.length; i += 10) {
+                    await Promise.all(urls.slice(i, i+10).map(async u => {
+                        try { const res = await fetch(u, {mode:'cors'}); if(res.ok) await cache.put(u, res); } catch(e){} c++;
+                    }));
+                    btn.innerText = `${c}/${urls.length}`;
+                }
+                btn.innerText = "¡Listo!"; setTimeout(() => btn.innerText = orig, 3000);
+            } catch(e) { alert("Error"); btn.innerText = orig; }
+            btn.disabled = false;
+        }
+
+        async function downloadCallejeroOverpass() {
+            try {
+                const q = `[out:json];area["name"="${MUNICIPALITIES[currentMunicipality].name}"]["admin_level"="8"]->.searchArea;(way["highway"~"residential|unclassified|pedestrian|living_street|service"](area.searchArea););out tags;`;
+                const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
+                const data = await res.json(); const vias = new Set();
+                data.elements.forEach(el => { if (el.tags && el.tags.name) vias.add(el.tags.name.trim()); });
+                localStorage.setItem(`amailia_db_vias_${currentMunicipality}`, JSON.stringify(Array.from(vias).sort()));
+                updateCallejeroStatusUI(); alert("Calles guardadas.");
+            } catch (err) { alert("Error al bajar calles."); }
+        }
+        function clearCallejeroLocal() { localStorage.removeItem(`amailia_db_vias_${currentMunicipality}`); updateCallejeroStatusUI(); }
+        function updateCallejeroStatusUI() {
+            const data = localStorage.getItem(`amailia_db_vias_${currentMunicipality}`);
+            const b = document.getElementById("dbSizeBadge");
+            if(data) { b.textContent = `${JSON.parse(data).length} calles`; b.className = "text-[10px] px-2 py-0.5 rounded bg-green-600 text-white"; }
+            else { b.textContent = "Vacío"; b.className = "text-[10px] px-2 py-0.5 rounded bg-red-600 text-white"; }
+        }
+        document.getElementById("streetInput").addEventListener("input", (e) => {
+            const q = e.target.value.toLowerCase(); const list = document.getElementById("autocompleteList");
+            if(q.length < 3) return list.classList.add("hidden");
+            const data = localStorage.getItem(`amailia_db_vias_${currentMunicipality}`); if(!data) return;
+            const calles = JSON.parse(data).filter(c => c.toLowerCase().includes(q)).slice(0, 5);
+            list.innerHTML = "";
+            calles.forEach(c => {
+                const div = document.createElement("div"); div.className = "px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-gray-200 border-b border-gray-100 dark:border-gray-700";
+                div.innerText = c; div.onclick = () => { document.getElementById("streetInput").value = c; list.classList.add("hidden"); document.getElementById("portalInput").focus(); };
+                list.appendChild(div);
+            });
+            calles.length > 0 ? list.classList.remove("hidden") : list.classList.add("hidden");
+        });
+
+        function ejecutarImpresionJornada() {
+            if (activeRouteData.length === 0) return alert("Sin datos.");
+            document.getElementById("printMetaLabel").textContent = `Fecha: ${new Date().toLocaleDateString('es-ES')} | Tramos: ${activeRouteData.length}`;
+            const tbody = document.getElementById("printTableBody"); tbody.innerHTML = "";
+            activeRouteData.forEach((s, i) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td style="text-align: center; font-weight: bold;">${i + 1}</td><td>${MUNICIPALITIES[s.municipality].name}</td><td style="font-weight: bold;">${s.street} <span style="font-size:10px;">(${s.sidewalk})</span></td><td style="text-align: center; font-weight: bold;">${s.portal}</td><td style="text-align: center;"><div style="width:14px; height:14px; border:1px solid #000; display:inline-block;"></div></td>`;
+                tbody.appendChild(tr);
+            });
+            setTimeout(() => window.print(), 350);
         }
 
         function triggerBackup() {
-            const backupPayload = { activeRoute: activeRouteData, history: JSON.parse(localStorage.getItem("amailia_history") || "[]"), exportedAt: new Date().toISOString() };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload));
-            const downloadAnchor = document.createElement('a'); downloadAnchor.setAttribute("href", dataStr); downloadAnchor.setAttribute("download", `amailia_v${APP_VERSION}_backup.json`);
-            document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ activeRoute: activeRouteData, history: JSON.parse(localStorage.getItem("amailia_history") || "[]") }));
+            const a = document.createElement('a'); a.href = dataStr; a.download = `amailia_v${APP_VERSION}_backup.json`; a.click();
         }
-
+        function triggerRestore() { document.getElementById("importFileInput").click(); }
+        function handleImportFile(e) {
+            const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const d = JSON.parse(e.target.result);
+                    if (d.activeRoute && d.history) { activeRouteData = d.activeRoute; localStorage.setItem("amailia_history", JSON.stringify(d.history)); saveStateToLocalStorage(); renderActiveRoute(); renderHistoryFileList(); alert("Backup cargado."); }
+                } catch(err) { alert("Error JSON."); }
+            }; reader.readAsText(file);
+        }
         async function checkUpdateOTA() {
             try {
-                const currentLoc = window.location.href.split('?')[0];
-                const response = await fetch(`${currentLoc}?cb=${Date.now()}`, { method: 'HEAD' });
-                const serverEtag = response.headers.get("ETag"); const serverLastModified = response.headers.get("Last-Modified");
-                const localSignature = localStorage.getItem("amailia_ota_signature"); const currentServerSignature = serverEtag || serverLastModified;
-                if (!currentServerSignature) return;
-                if (localSignature && localSignature !== currentServerSignature) { if (confirm("¿Actualizar versión?")) { localStorage.setItem("amailia_ota_signature", currentServerSignature); window.location.reload(true); } } else { localStorage.setItem("amailia_ota_signature", currentServerSignature); alert(`Terminal al día: v${APP_VERSION}.`); }
-            } catch (error) { console.log("OTA working local."); }
+                const res = await fetch(`${window.location.href.split('?')[0]}?cb=${Date.now()}`, { method: 'HEAD' });
+                const sig = res.headers.get("ETag") || res.headers.get("Last-Modified");
+                const local = localStorage.getItem("amailia_ota");
+                if (local && local !== sig) { if (confirm("¿Actualizar?")) { localStorage.setItem("amailia_ota", sig); window.location.reload(true); } } 
+                else { localStorage.setItem("amailia_ota", sig); alert(`Actualizado (v${APP_VERSION})`); }
+            } catch (e) { console.log("OTA local."); }
         }
+
+        function toggleNightMode() { const isDark = document.getElementById("nightModeToggle").checked; document.documentElement.classList.toggle("dark", isDark); }
+        function saveStateToLocalStorage() { localStorage.setItem("amailia_active_route", JSON.stringify(activeRouteData)); localStorage.setItem("amailia_current_muni", currentMunicipality); }
+        function loadStateFromLocalStorage() { const r = localStorage.getItem("amailia_active_route"); const m = localStorage.getItem("amailia_current_muni"); if(r) activeRouteData = JSON.parse(r); if(m) switchMunicipality(m); }
     </script>
 </body>
 </html>
