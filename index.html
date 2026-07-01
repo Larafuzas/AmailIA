@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v6.4.0)</title>
+    <title>AmailIA - Optimización de Reparto (v6.5.0)</title>
     
+    <!-- METADATOS PARA EL ICONO EN ESCRITORIO MÓVIL -->
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
     <meta name="apple-mobile-web-app-title" content="AmailIA">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1e3a8a">
@@ -105,7 +107,7 @@
                 </div>
                 <form id="routeForm" onsubmit="handleFormSubmit(event)" class="space-y-2 relative">
                     <input type="hidden" id="customCoordsInput" value="">
-                    <input type="text" id="streetInput" autocomplete="off" placeholder="Calle (Ej. Camí Reial)" class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-600 dark:text-white" required>
+                    <input type="text" id="streetInput" autocomplete="off" placeholder="Calle o Plaza" class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-600 dark:text-white" required>
                     <div id="autocompleteList" class="absolute top-10 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-40 overflow-y-auto hidden z-50"></div>
                     
                     <div class="flex space-x-2">
@@ -150,11 +152,11 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Datos Offline (Sin Cobertura)</label>
                 
                 <div class="flex justify-between items-center">
-                    <span class="text-xs font-medium dark:text-gray-300">Textos (Calles)</span>
+                    <span class="text-xs font-medium dark:text-gray-300">Textos (Calles y Plazas)</span>
                     <span id="dbSizeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700">Vacío</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="downloadCallejeroOverpass()" class="text-xs bg-blue-900 text-white py-2 rounded-lg font-semibold">Bajar Calles</button>
+                    <button onclick="downloadCallejeroOverpass()" class="text-xs bg-blue-900 text-white py-2 rounded-lg font-semibold">Bajar Datos</button>
                     <button onclick="clearCallejeroLocal()" class="text-xs bg-gray-200 dark:bg-gray-700 text-red-600 py-2 rounded-lg font-semibold">Borrar</button>
                 </div>
 
@@ -184,7 +186,7 @@
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-950 text-white text-[11px] font-mono py-2 rounded-lg flex items-center justify-center space-x-2">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span>Comprobar OTA (v6.4.0)</span>
+                        <span>Comprobar OTA (v6.5.0)</span>
                     </button>
                 </div>
             </div>
@@ -222,7 +224,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "6.4.0";
+        const APP_VERSION = "6.5.0";
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -514,9 +516,11 @@
             btn.disabled = false;
         }
 
+        // SOLUCIÓN DEFINITIVA A PLAZAS Y VÍAS SECUNDARIAS
         async function downloadCallejeroOverpass() {
             try {
-                const q = `[out:json];area["name"="${MUNICIPALITIES[currentMunicipality].name}"]["admin_level"="8"]->.searchArea;(way["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary"](area.searchArea););out tags;`;
+                // nwr permite capturar Nodos, Vías y Relaciones. Se añade el tag "place~square|neighbourhood" para las plazas peatonales.
+                const q = `[out:json];area["name"="${MUNICIPALITIES[currentMunicipality].name}"]["admin_level"="8"]->.searchArea;(nwr["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary"](area.searchArea);nwr["place"~"square|neighbourhood"](area.searchArea););out tags;`;
                 const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
                 const data = await res.json(); const vias = new Set();
                 data.elements.forEach(el => { if (el.tags && el.tags.name) vias.add(el.tags.name.trim()); });
