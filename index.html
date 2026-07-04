@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v6.5.0)</title>
+    <title>AmailIA - Optimización de Reparto (v6.6.0)</title>
     
-    <!-- METADATOS PARA EL ICONO EN ESCRITORIO MÓVIL -->
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
     <meta name="apple-mobile-web-app-title" content="AmailIA">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1e3a8a">
@@ -27,10 +25,22 @@
 
         .dark .leaflet-layer { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
         
+        /* ESTILOS DINÁMICOS DE ESTADO PARA MARCADORES */
         .route-idx-marker {
-            background-color: #1e3a8a; color: #ffffff; border: 2px solid #ffffff;
+            background-color: #1e3a8a; /* Pendiente (Azul) */
+            color: #ffffff; border: 2px solid #ffffff;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-size: 13px; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: background-color 0.3s ease;
+        }
+        
+        .route-idx-marker.estado-entregado {
+            background-color: #10b981; /* Entregado (Verde) */
+            opacity: 0.85; /* Un poco translúcido para que destaque menos */
+        }
+        
+        .route-idx-marker.estado-error {
+            background-color: #ef4444; /* Error (Rojo) */
         }
 
         .history-idx-marker {
@@ -41,12 +51,10 @@
 
         .map-picking-active { cursor: crosshair !important; }
 
-        /* Estilos de la navegación inferior */
         .nav-item { transition: all 0.2s ease; }
         .nav-item.active { color: #1e3a8a; }
         .dark .nav-item.active { color: #60a5fa; }
         
-        /* Animación del panel inferior */
         #bottom-sheet { transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
         #printTableContainer { display: none; }
@@ -186,7 +194,7 @@
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-950 text-white text-[11px] font-mono py-2 rounded-lg flex items-center justify-center space-x-2">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span>Comprobar OTA (v6.5.0)</span>
+                        <span>Comprobar OTA (v6.6.0)</span>
                     </button>
                 </div>
             </div>
@@ -224,7 +232,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "6.5.0";
+        const APP_VERSION = "6.6.0";
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -353,13 +361,35 @@
                     } catch (err) {}
                 }
                 if (!geoPoint) { isPendingSync = true; geoPoint = [...MUNICIPALITIES[currentMunicipality].coords]; }
-                activeRouteData.push({ id: Date.now() + Math.random(), municipality: currentMunicipality, street: streetName, portal: portalNum, coords: geoPoint, pendingSync: isPendingSync });
+                
+                // Novedad v6.6.0: Añadimos la propiedad de estado (pendiente por defecto)
+                activeRouteData.push({ 
+                    id: Date.now() + Math.random(), 
+                    municipality: currentMunicipality, 
+                    street: streetName, 
+                    portal: portalNum, 
+                    coords: geoPoint, 
+                    pendingSync: isPendingSync,
+                    estado: 'pendiente' // 'pendiente', 'entregado', 'error'
+                });
             }
 
             saveStateToLocalStorage(); renderActiveRoute();
             document.getElementById("routeForm").reset(); document.getElementById("customCoordsInput").value = "";
             submitBtn.disabled = false; syncPendingCoordinates();
         }
+
+        /* Novedad v6.6.0: Función global para cambiar el estado de un tramo desde el popup o la lista */
+        window.cambiarEstadoTramo = function(id, nuevoEstado) {
+            const tramo = activeRouteData.find(s => s.id === id);
+            if (tramo) {
+                tramo.estado = tramo.estado === nuevoEstado ? 'pendiente' : nuevoEstado;
+                saveStateToLocalStorage();
+                renderActiveRoute();
+                // Opcional: Cerrar popup tras pulsar
+                map.closePopup();
+            }
+        };
 
         function renderActiveRoute() {
             routeMarkersGroup.clearLayers(); routeLinesGroup.clearLayers();
@@ -373,13 +403,56 @@
                 const step = index + 1;
                 if (segment.pendingSync) pendingSyncCount++; else polylinePoints.push(segment.coords);
 
-                if (!segment.pendingSync) {
-                    L.marker(segment.coords, { icon: L.divIcon({ className: 'route-idx-marker', html: `<span>${step}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] }) }).bindPopup(`<b>Tramo #${step}</b><br>${segment.street}, Nº${segment.portal}`).addTo(routeMarkersGroup);
+                // Asignación dinámica de clases CSS según el estado del tramo
+                let estadoClassMarker = '';
+                let estadoIconLista = '';
+                if (segment.estado === 'entregado') {
+                    estadoClassMarker = 'estado-entregado';
+                    estadoIconLista = '<span class="text-green-500 font-bold ml-1">✓</span>';
+                } else if (segment.estado === 'error') {
+                    estadoClassMarker = 'estado-error';
+                    estadoIconLista = '<span class="text-red-500 font-bold ml-1">✗</span>';
                 }
 
+                if (!segment.pendingSync) {
+                    const customIcon = L.divIcon({ 
+                        className: `route-idx-marker ${estadoClassMarker}`, 
+                        html: `<span>${step}</span>`, 
+                        iconSize: [28, 28], 
+                        iconAnchor: [14, 14] 
+                    });
+
+                    // Construcción del Popup interactivo con botones de estado
+                    const popupContent = `
+                        <div style="font-family: sans-serif; text-align: center;">
+                            <b>Tramo #${step}</b><br>${segment.street}, Nº${segment.portal}
+                            <div style="margin-top: 8px; display: flex; gap: 4px; justify-content: center;">
+                                <button onclick="cambiarEstadoTramo(${segment.id}, 'entregado')" style="background: #10b981; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">✓ Entregado</button>
+                                <button onclick="cambiarEstadoTramo(${segment.id}, 'error')" style="background: #ef4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">✗ Error</button>
+                            </div>
+                        </div>
+                    `;
+
+                    L.marker(segment.coords, { icon: customIcon }).bindPopup(popupContent).addTo(routeMarkersGroup);
+                }
+
+                // Renderizado en la lista del panel
+                let borderLeftClass = segment.pendingSync ? 'border-amber-500' : 'border-blue-700';
+                if (segment.estado === 'entregado') borderLeftClass = 'border-green-500 opacity-60'; // Atenuar un poco si ya está entregado
+                if (segment.estado === 'error') borderLeftClass = 'border-red-500';
+
                 const row = document.createElement("div"); 
-                row.className = `flex justify-between items-center p-2 bg-white dark:bg-gray-900 rounded-lg border-l-4 ${segment.pendingSync ? 'border-amber-500' : 'border-blue-700'} mb-1.5 shadow-sm`;
-                row.innerHTML = `<div class="text-xs truncate flex items-center space-x-2"><button onclick="solicitarCambioPosicionDirecto(${index})" class="bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-200 font-bold px-2 py-0.5 rounded">${step}</button><div class="truncate"><p class="font-bold dark:text-gray-200">${segment.street}</p><p class="text-[10px] text-gray-500">Nº${segment.portal}</p></div></div><button onclick="removeSegment(${segment.id})" class="text-red-400 p-1">x</button>`;
+                row.className = `flex justify-between items-center p-2 bg-white dark:bg-gray-900 rounded-lg border-l-4 ${borderLeftClass} mb-1.5 shadow-sm`;
+                row.innerHTML = `
+                    <div class="text-xs truncate flex items-center space-x-2">
+                        <button onclick="solicitarCambioPosicionDirecto(${index})" class="bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-200 font-bold px-2 py-0.5 rounded">${step}</button>
+                        <div class="truncate">
+                            <p class="font-bold dark:text-gray-200">${segment.street} ${estadoIconLista}</p>
+                            <p class="text-[10px] text-gray-500">Nº${segment.portal}</p>
+                        </div>
+                    </div>
+                    <button onclick="removeSegment(${segment.id})" class="text-red-400 p-1">x</button>
+                `;
                 listContainer.appendChild(row);
             });
 
@@ -516,10 +589,8 @@
             btn.disabled = false;
         }
 
-        // SOLUCIÓN DEFINITIVA A PLAZAS Y VÍAS SECUNDARIAS
         async function downloadCallejeroOverpass() {
             try {
-                // nwr permite capturar Nodos, Vías y Relaciones. Se añade el tag "place~square|neighbourhood" para las plazas peatonales.
                 const q = `[out:json];area["name"="${MUNICIPALITIES[currentMunicipality].name}"]["admin_level"="8"]->.searchArea;(nwr["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary"](area.searchArea);nwr["place"~"square|neighbourhood"](area.searchArea););out tags;`;
                 const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
                 const data = await res.json(); const vias = new Set();
@@ -554,8 +625,12 @@
             document.getElementById("printMetaLabel").textContent = `Fecha: ${new Date().toLocaleDateString('es-ES')} | Tramos: ${activeRouteData.length}`;
             const tbody = document.getElementById("printTableBody"); tbody.innerHTML = "";
             activeRouteData.forEach((s, i) => {
+                let estadoTxt = '';
+                if(s.estado === 'entregado') estadoTxt = '✅';
+                if(s.estado === 'error') estadoTxt = '❌';
+
                 const tr = document.createElement("tr");
-                tr.innerHTML = `<td style="text-align: center; font-weight: bold;">${i + 1}</td><td>${MUNICIPALITIES[s.municipality].name}</td><td style="font-weight: bold;">${s.street}</td><td style="text-align: center; font-weight: bold;">${s.portal}</td>`;
+                tr.innerHTML = `<td style="text-align: center; font-weight: bold;">${i + 1}</td><td>${MUNICIPALITIES[s.municipality].name}</td><td style="font-weight: bold;">${s.street}</td><td style="text-align: center; font-weight: bold;">${s.portal}</td><td style="text-align: center;">${estadoTxt}</td>`;
                 tbody.appendChild(tr);
             });
             setTimeout(() => window.print(), 350);
