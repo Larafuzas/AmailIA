@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v6.7.0)</title>
+    <title>AmailIA - Optimización de Reparto (v6.8.0)</title>
     
-    <!-- METADATOS PARA EL ICONO EN ESCRITORIO MÓVIL -->
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
     <meta name="apple-mobile-web-app-title" content="AmailIA">
@@ -20,29 +19,18 @@
 
     <style>
         body { touch-action: pan-x pan-y; }
-        
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
         .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
-
         .dark .leaflet-layer { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
         
-        /* ESTILOS DINÁMICOS DE ESTADO PARA MARCADORES */
         .route-idx-marker {
-            background-color: #1e3a8a; 
-            color: #ffffff; border: 2px solid #ffffff;
+            background-color: #1e3a8a; color: #ffffff; border: 2px solid #ffffff;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-size: 13px; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
             transition: background-color 0.3s ease;
         }
-        
-        .route-idx-marker.estado-entregado {
-            background-color: #10b981; 
-            opacity: 0.85; 
-        }
-        
-        .route-idx-marker.estado-error {
-            background-color: #ef4444; 
-        }
+        .route-idx-marker.estado-entregado { background-color: #10b981; opacity: 0.85; }
+        .route-idx-marker.estado-error { background-color: #ef4444; }
 
         .history-idx-marker {
             background-color: #dc2626; color: #ffffff; border: 2px solid #ffffff;
@@ -51,13 +39,10 @@
         }
 
         .map-picking-active { cursor: crosshair !important; }
-
         .nav-item { transition: all 0.2s ease; }
         .nav-item.active { color: #1e3a8a; }
         .dark .nav-item.active { color: #60a5fa; }
-        
         #bottom-sheet { transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        
         #printTableContainer { display: none; }
 
         @media print {
@@ -76,7 +61,6 @@
 
     <div id="map-wrapper" class="flex-1 relative z-0 w-full">
         <div class="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-black/50 to-transparent z-[400] pointer-events-none"></div>
-        
         <div id="map" class="h-full w-full"></div>
         
         <div id="toastMapPicker" class="absolute top-12 left-1/2 transform -translate-x-1/2 z-[400] bg-blue-950 text-white px-4 py-2 rounded-full shadow-lg flex items-center space-x-2 opacity-0 transition-opacity duration-300 pointer-events-none">
@@ -94,7 +78,6 @@
     </div>
 
     <div id="bottom-sheet" class="bg-white dark:bg-gray-900 rounded-t-3xl shadow-[0_-15px_40px_rgba(0,0,0,0.15)] z-40 w-full flex flex-col border-t border-gray-200 dark:border-gray-800 h-[60dvh]">
-        
         <div class="w-full flex justify-center pt-3 pb-2 shrink-0 cursor-pointer" onclick="switchTab('mapa')">
             <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
         </div>
@@ -110,7 +93,6 @@
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Añadir Tramos</span>
                     
-                    <!-- NUEVO INTERRUPTOR DE MODO DE ENRUTAMIENTO (PEATONAL / VEHÍCULO) -->
                     <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-0.5 ml-2 mr-2 flex-1 max-w-[100px] justify-between">
                         <button onclick="setRoutingMode('foot')" id="btn-mode-foot" class="flex-1 flex justify-center py-1 bg-white dark:bg-gray-600 rounded-md shadow-sm text-blue-600 dark:text-blue-400 transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"></path></svg>
@@ -141,7 +123,7 @@
 
             <div>
                 <div class="flex space-x-2 mb-2">
-                    <button onclick="optimizeRouteLocalTSP()" id="tspOptimizeBtn" class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-lg shadow-sm text-xs active:scale-[0.98]">Optimizar (TSP)</button>
+                    <button onclick="handleOptimizeClick()" id="tspOptimizeBtn" class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-lg shadow-sm text-xs active:scale-[0.98]">Optimizar (Peatón)</button>
                     <button onclick="invertirSentidoRutaCompleta()" class="flex-1 bg-purple-700 text-white font-bold py-2 rounded-lg shadow-sm text-xs active:scale-[0.98]">Invertir Marcha</button>
                 </div>
                 <div class="flex justify-between items-center mb-1">
@@ -170,7 +152,6 @@
 
             <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Datos Offline (Sin Cobertura)</label>
-                
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-medium dark:text-gray-300">Textos (Calles y Plazas)</span>
                     <span id="dbSizeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700">Vacío</span>
@@ -179,7 +160,6 @@
                     <button onclick="downloadCallejeroOverpass()" class="text-xs bg-blue-900 text-white py-2 rounded-lg font-semibold">Bajar Datos</button>
                     <button onclick="clearCallejeroLocal()" class="text-xs bg-gray-200 dark:bg-gray-700 text-red-600 py-2 rounded-lg font-semibold">Borrar</button>
                 </div>
-
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <span class="text-xs font-medium dark:text-gray-300 block mb-2">Imágenes Cartográficas (Área visible)</span>
                     <button onclick="downloadMapTilesOffline()" id="btnDownloadMap" class="w-full text-xs bg-teal-700 text-white py-2 rounded-lg font-semibold">Descargar Plano Nivel 14-17</button>
@@ -194,7 +174,6 @@
                         <div class="w-9 h-5 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                 </div>
-                
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <span class="text-xs font-semibold dark:text-gray-300 block mb-2">Copias de Seguridad (JSON)</span>
                     <div class="grid grid-cols-2 gap-2">
@@ -202,11 +181,10 @@
                         <button onclick="triggerRestore()" class="text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2 rounded-lg font-bold">Importar</button>
                     </div>
                 </div>
-
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-950 text-white text-[11px] font-mono py-2 rounded-lg flex items-center justify-center space-x-2">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span>Comprobar OTA (v6.7.0)</span>
+                        <span>Comprobar OTA (v6.8.0)</span>
                     </button>
                 </div>
             </div>
@@ -244,7 +222,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "6.7.0";
+        const APP_VERSION = "6.8.0";
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -252,85 +230,56 @@
         };
 
         let currentMunicipality = 'catarroja';
-        let routingMode = 'foot'; // Novedad v6.7.0: 'foot' o 'car'
+        let routingMode = 'foot'; 
         
         let map = null, mapTileLayer;
         let activeRouteData = []; 
         let routeMarkersGroup, routeLinesGroup, historyLayersGroup;
         let isMapPickingModeActive = false;
 
-        /* --- LÓGICA DE MODO DE ENRUTAMIENTO (PEATÓN/COCHE) --- */
         function setRoutingMode(mode) {
             routingMode = mode;
             localStorage.setItem('amailia_routing_mode', mode);
             
+            const btnOpt = document.getElementById('tspOptimizeBtn');
+            
             if(mode === 'foot') {
                 document.getElementById('btn-mode-foot').className = "flex-1 flex justify-center py-1 bg-white dark:bg-gray-600 rounded-md shadow-sm text-blue-600 dark:text-blue-400 transition-all";
                 document.getElementById('btn-mode-car').className = "flex-1 flex justify-center py-1 text-gray-500 dark:text-gray-400 rounded-md transition-all";
+                btnOpt.innerText = "Optimizar (Peatón)";
             } else {
                 document.getElementById('btn-mode-car').className = "flex-1 flex justify-center py-1 bg-white dark:bg-gray-600 rounded-md shadow-sm text-blue-600 dark:text-blue-400 transition-all";
                 document.getElementById('btn-mode-foot').className = "flex-1 flex justify-center py-1 text-gray-500 dark:text-gray-400 rounded-md transition-all";
+                btnOpt.innerText = "Optimizar (Coche)";
             }
-            // Forzamos el redibujado de la ruta con las nuevas reglas de tráfico
-            if (activeRouteData.length > 1) {
-                renderActiveRoute();
-            }
+            if (activeRouteData.length > 1) renderActiveRoute();
         }
 
-        /* --- UI LOGIC: Pestañas y Bottom Sheet --- */
         function switchTab(tabId) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById(`nav-${tabId}`).classList.add('active');
-
             const sheet = document.getElementById('bottom-sheet');
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-
-            if (tabId === 'mapa') {
-                sheet.style.height = '0px'; 
-            } else {
-                sheet.style.height = '60dvh'; 
-                document.getElementById(`view-${tabId}`).classList.remove('hidden');
-            }
-
+            if (tabId === 'mapa') { sheet.style.height = '0px'; } else { sheet.style.height = '60dvh'; document.getElementById(`view-${tabId}`).classList.remove('hidden'); }
             setTimeout(() => { if(map) map.invalidateSize(); }, 350);
         }
 
-        /* --- MAP CACHE SYSTEM (L.TileLayer.Cached) --- */
         L.TileLayer.Cached = L.TileLayer.extend({
             createTile: function (coords, done) {
-                var tile = document.createElement('img');
-                var url = this.getTileUrl(coords);
-                tile.alt = '';
+                var tile = document.createElement('img'); var url = this.getTileUrl(coords); tile.alt = '';
                 if ('caches' in window) {
                     caches.match(url).then(function(response) {
                         if (response) { response.blob().then(function(blob) { tile.src = URL.createObjectURL(blob); done(null, tile); }); } 
-                        else {
-                            fetch(url).then(res => {
-                                let resClone = res.clone();
-                                caches.open('amailia-maptiles').then(cache => cache.put(url, resClone));
-                                res.blob().then(blob => { tile.src = URL.createObjectURL(blob); done(null, tile); });
-                            }).catch(err => { done(err, tile); });
-                        }
+                        else { fetch(url).then(res => { let resClone = res.clone(); caches.open('amailia-maptiles').then(cache => cache.put(url, resClone)); res.blob().then(blob => { tile.src = URL.createObjectURL(blob); done(null, tile); }); }).catch(err => { done(err, tile); }); }
                     });
-                } else { tile.src = url; done(null, tile); }
-                return tile;
+                } else { tile.src = url; done(null, tile); } return tile;
             }
         });
 
         document.addEventListener("DOMContentLoaded", () => {
-            initLeafletMap();
-            loadStateFromLocalStorage();
-            renderActiveRoute();
-            renderHistoryFileList();
-            updateCallejeroStatusUI();
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.getElementById('nightModeToggle').checked = true; toggleNightMode();
-            }
-            
-            // Inicializar el interruptor de modo al arrancar
-            const savedMode = localStorage.getItem('amailia_routing_mode') || 'foot';
-            setRoutingMode(savedMode);
-            
+            initLeafletMap(); loadStateFromLocalStorage(); renderActiveRoute(); renderHistoryFileList(); updateCallejeroStatusUI();
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { document.getElementById('nightModeToggle').checked = true; toggleNightMode(); }
+            const savedMode = localStorage.getItem('amailia_routing_mode') || 'foot'; setRoutingMode(savedMode);
             switchTab('ruta');
         });
 
@@ -338,98 +287,73 @@
             const initConf = MUNICIPALITIES[currentMunicipality];
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView(initConf.coords, 15);
             mapTileLayer = new L.TileLayer.Cached('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-            
-            routeMarkersGroup = L.layerGroup().addTo(map);
-            routeLinesGroup = L.layerGroup().addTo(map);
-            historyLayersGroup = L.layerGroup().addTo(map);
-
+            routeMarkersGroup = L.layerGroup().addTo(map); routeLinesGroup = L.layerGroup().addTo(map); historyLayersGroup = L.layerGroup().addTo(map);
             map.on('click', function(e) { if (isMapPickingModeActive) handleMapClickCapture(e.latlng); });
         }
 
-        /* --- LÓGICA CORE: Tramos, Formularios, TSP --- */
         function switchMunicipality(muniKey) {
             currentMunicipality = muniKey;
-            document.querySelectorAll(".tab-btn").forEach(btn => {
-                btn.classList.remove("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
-                btn.classList.add("text-gray-500", "dark:text-gray-400");
-            });
+            document.querySelectorAll(".tab-btn").forEach(btn => { btn.classList.remove("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white"); btn.classList.add("text-gray-500", "dark:text-gray-400"); });
             document.getElementById(`tab-${muniKey}`).classList.add("bg-white", "dark:bg-gray-700", "shadow-sm", "text-blue-900", "dark:text-white");
-            map.flyTo(MUNICIPALITIES[muniKey].coords, 15, { animate: true, duration: 1 });
-            updateCallejeroStatusUI();
+            map.flyTo(MUNICIPALITIES[muniKey].coords, 15, { animate: true, duration: 1 }); updateCallejeroStatusUI();
         }
 
         function activateMapPickerMode() {
-            isMapPickingModeActive = true; 
-            switchTab('mapa'); 
-            document.getElementById("map").classList.add("map-picking-active");
+            isMapPickingModeActive = true; switchTab('mapa'); document.getElementById("map").classList.add("map-picking-active");
             document.getElementById("toastMapPicker").classList.replace("opacity-0", "opacity-100");
         }
 
         function handleMapClickCapture(latlng) {
-            isMapPickingModeActive = false; 
-            document.getElementById("map").classList.remove("map-picking-active");
-            document.getElementById("toastMapPicker").classList.replace("opacity-100", "opacity-0");
-            document.getElementById("customCoordsInput").value = JSON.stringify([latlng.lat, latlng.lng]);
-            document.getElementById("streetInput").value = "Punto marcado en Mapa";
-            switchTab('ruta'); 
-            document.getElementById("portalInput").focus();
+            isMapPickingModeActive = false; document.getElementById("map").classList.remove("map-picking-active"); document.getElementById("toastMapPicker").classList.replace("opacity-100", "opacity-0");
+            document.getElementById("customCoordsInput").value = JSON.stringify([latlng.lat, latlng.lng]); document.getElementById("streetInput").value = "Punto marcado en Mapa";
+            switchTab('ruta'); document.getElementById("portalInput").focus();
         }
 
         async function handleFormSubmit(event) {
-            event.preventDefault();
-            const submitBtn = document.getElementById("submitBtn");
-            const streetName = document.getElementById("streetInput").value.trim();
-            const portalesLote = document.getElementById("portalInput").value.split(',').map(p => p.trim()).filter(p => p !== "");
-            const customCoordsRaw = document.getElementById("customCoordsInput").value;
-            submitBtn.disabled = true;
+            event.preventDefault(); const submitBtn = document.getElementById("submitBtn");
+            const streetName = document.getElementById("streetInput").value.trim(); const portalesLote = document.getElementById("portalInput").value.split(',').map(p => p.trim()).filter(p => p !== "");
+            const customCoordsRaw = document.getElementById("customCoordsInput").value; submitBtn.disabled = true;
 
             for (let portalToken of portalesLote) {
-                const portalNum = parseInt(portalToken, 10);
-                if (isNaN(portalNum)) continue;
+                const portalNum = parseInt(portalToken, 10); if (isNaN(portalNum)) continue;
                 let geoPoint = null; let isPendingSync = false;
-
                 if (customCoordsRaw) { geoPoint = JSON.parse(customCoordsRaw); } 
                 else if (navigator.onLine) {
                     try {
                         const mName = MUNICIPALITIES[currentMunicipality].name;
                         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${mName},+Valencia&limit=1`);
-                        const data = await res.json();
-                        if (data && data.length > 0) geoPoint = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                        const data = await res.json(); if (data && data.length > 0) geoPoint = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
                     } catch (err) {}
                 }
                 if (!geoPoint) { isPendingSync = true; geoPoint = [...MUNICIPALITIES[currentMunicipality].coords]; }
-                
-                activeRouteData.push({ 
-                    id: Date.now() + Math.random(), 
-                    municipality: currentMunicipality, 
-                    street: streetName, 
-                    portal: portalNum, 
-                    coords: geoPoint, 
-                    pendingSync: isPendingSync,
-                    estado: 'pendiente'
-                });
+                activeRouteData.push({ id: Date.now() + Math.random(), municipality: currentMunicipality, street: streetName, portal: portalNum, coords: geoPoint, pendingSync: isPendingSync, estado: 'pendiente' });
             }
-
-            saveStateToLocalStorage(); renderActiveRoute();
-            document.getElementById("routeForm").reset(); document.getElementById("customCoordsInput").value = "";
-            submitBtn.disabled = false; syncPendingCoordinates();
+            saveStateToLocalStorage(); renderActiveRoute(); document.getElementById("routeForm").reset(); document.getElementById("customCoordsInput").value = ""; submitBtn.disabled = false; syncPendingCoordinates();
         }
 
         window.cambiarEstadoTramo = function(id, nuevoEstado) {
             const tramo = activeRouteData.find(s => s.id === id);
-            if (tramo) {
-                tramo.estado = tramo.estado === nuevoEstado ? 'pendiente' : nuevoEstado;
-                saveStateToLocalStorage();
-                renderActiveRoute();
-                map.closePopup();
-            }
+            if (tramo) { tramo.estado = tramo.estado === nuevoEstado ? 'pendiente' : nuevoEstado; saveStateToLocalStorage(); renderActiveRoute(); map.closePopup(); }
         };
 
-        function drawStraightPolylineFallback(points) {
-            const polyline = L.polyline(points, {
-                color: '#1e3a8a', weight: 4, opacity: 0.8, dashArray: '8, 12', lineJoin: 'round'
-            });
-            polyline.addTo(routeLinesGroup);
+        async function fetchRouteGeometry(points, profile) {
+            const chunkSize = 35; // Límite seguro para URLs de OSRM
+            let allLatsLongs = [];
+            for (let i = 0; i < points.length - 1; i += chunkSize - 1) {
+                const chunk = points.slice(i, i + chunkSize);
+                const coordsString = chunk.map(c => `${c[1]},${c[0]}`).join(';');
+                const url = `https://router.project-osrm.org/route/v1/${profile}/${coordsString}?overview=full&geometries=geojson`;
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error("OSRM routing failed");
+                    const data = await res.json();
+                    if (data.code === "Ok" && data.routes && data.routes[0]) {
+                        const latsLongs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                        allLatsLongs = allLatsLongs.concat(latsLongs);
+                    } else { throw new Error("Invalid route data"); }
+                } catch (e) { allLatsLongs = allLatsLongs.concat(chunk); }
+            }
+            return allLatsLongs;
         }
 
         function renderActiveRoute() {
@@ -444,34 +368,13 @@
                 const step = index + 1;
                 if (segment.pendingSync) pendingSyncCount++; else polylinePoints.push(segment.coords);
 
-                let estadoClassMarker = '';
-                let estadoIconLista = '';
-                if (segment.estado === 'entregado') {
-                    estadoClassMarker = 'estado-entregado';
-                    estadoIconLista = '<span class="text-green-500 font-bold ml-1">✓</span>';
-                } else if (segment.estado === 'error') {
-                    estadoClassMarker = 'estado-error';
-                    estadoIconLista = '<span class="text-red-500 font-bold ml-1">✗</span>';
-                }
+                let estadoClassMarker = ''; let estadoIconLista = '';
+                if (segment.estado === 'entregado') { estadoClassMarker = 'estado-entregado'; estadoIconLista = '<span class="text-green-500 font-bold ml-1">✓</span>'; } 
+                else if (segment.estado === 'error') { estadoClassMarker = 'estado-error'; estadoIconLista = '<span class="text-red-500 font-bold ml-1">✗</span>'; }
 
                 if (!segment.pendingSync) {
-                    const customIcon = L.divIcon({ 
-                        className: `route-idx-marker ${estadoClassMarker}`, 
-                        html: `<span>${step}</span>`, 
-                        iconSize: [28, 28], 
-                        iconAnchor: [14, 14] 
-                    });
-
-                    const popupContent = `
-                        <div style="font-family: sans-serif; text-align: center;">
-                            <b>Tramo #${step}</b><br>${segment.street}, Nº${segment.portal}
-                            <div style="margin-top: 8px; display: flex; gap: 4px; justify-content: center;">
-                                <button onclick="cambiarEstadoTramo(${segment.id}, 'entregado')" style="background: #10b981; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">✓ Entregado</button>
-                                <button onclick="cambiarEstadoTramo(${segment.id}, 'error')" style="background: #ef4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">✗ Error</button>
-                            </div>
-                        </div>
-                    `;
-
+                    const customIcon = L.divIcon({ className: `route-idx-marker ${estadoClassMarker}`, html: `<span>${step}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] });
+                    const popupContent = `<div style="font-family: sans-serif; text-align: center;"><b>Tramo #${step}</b><br>${segment.street}, Nº${segment.portal}<div style="margin-top: 8px; display: flex; gap: 4px; justify-content: center;"><button onclick="cambiarEstadoTramo(${segment.id}, 'entregado')" style="background: #10b981; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">✓ Entregado</button><button onclick="cambiarEstadoTramo(${segment.id}, 'error')" style="background: #ef4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">✗ Error</button></div></div>`;
                     L.marker(segment.coords, { icon: customIcon }).bindPopup(popupContent).addTo(routeMarkersGroup);
                 }
 
@@ -479,57 +382,24 @@
                 if (segment.estado === 'entregado') borderLeftClass = 'border-green-500 opacity-60';
                 if (segment.estado === 'error') borderLeftClass = 'border-red-500';
 
-                const row = document.createElement("div"); 
-                row.className = `flex justify-between items-center p-2 bg-white dark:bg-gray-900 rounded-lg border-l-4 ${borderLeftClass} mb-1.5 shadow-sm`;
-                row.innerHTML = `
-                    <div class="text-xs truncate flex items-center space-x-2">
-                        <button onclick="solicitarCambioPosicionDirecto(${index})" class="bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-200 font-bold px-2 py-0.5 rounded">${step}</button>
-                        <div class="truncate">
-                            <p class="font-bold dark:text-gray-200">${segment.street} ${estadoIconLista}</p>
-                            <p class="text-[10px] text-gray-500">Nº${segment.portal}</p>
-                        </div>
-                    </div>
-                    <button onclick="removeSegment(${segment.id})" class="text-red-400 p-1">x</button>
-                `;
+                const row = document.createElement("div"); row.className = `flex justify-between items-center p-2 bg-white dark:bg-gray-900 rounded-lg border-l-4 ${borderLeftClass} mb-1.5 shadow-sm`;
+                row.innerHTML = `<div class="text-xs truncate flex items-center space-x-2"><button onclick="solicitarCambioPosicionDirecto(${index})" class="bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-200 font-bold px-2 py-0.5 rounded">${step}</button><div class="truncate"><p class="font-bold dark:text-gray-200">${segment.street} ${estadoIconLista}</p><p class="text-[10px] text-gray-500">Nº${segment.portal}</p></div></div><button onclick="removeSegment(${segment.id})" class="text-red-400 p-1">x</button>`;
                 listContainer.appendChild(row);
             });
 
             const syncBtn = document.getElementById("syncQueueBtn");
             if (pendingSyncCount > 0) { syncBtn.classList.remove("hidden"); syncBtn.textContent = `Sync (${pendingSyncCount})`; } else { syncBtn.classList.add("hidden"); }
             
-            // RENDERING DINÁMICO DE LA LÍNEA DEL MAPA (Basado en el modo seleccionado)
+            // TRAZADO SEGURO POR FRAGMENTOS (Evita Error 414 de URL demasiado larga en OSRM)
             if (polylinePoints.length > 1) {
-                const coordsString = polylinePoints.map(c => `${c[1]},${c[0]}`).join(';');
-                let url = '';
-                
-                if (routingMode === 'car') {
-                    // Perfil de conducción (respeta sentidos únicos, glorietas, etc.)
-                    url = `https://router.openstreetmap.de/routed-car/route/v1/driving/${coordsString}?overview=full&geometries=geojson`;
-                } else {
-                    // Perfil peatonal estricto
-                    url = `https://router.openstreetmap.de/routed-foot/route/v1/foot/${coordsString}?overview=full&geometries=geojson`;
-                }
-
-                fetch(url)
-                    .then(res => {
-                        if (!res.ok) throw new Error("API Limit");
-                        return res.json();
-                    })
-                    .then(data => {
-                        if (data.code === "Ok" && data.routes && data.routes[0]) {
-                            const latsLongs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                            const polyline = L.polyline(latsLongs, {
-                                color: routingMode === 'car' ? '#8b5cf6' : '#1e3a8a', // Morado para coche, Azul para peatón
-                                weight: 5, opacity: 0.85, lineJoin: 'round'
-                            });
-                            polyline.addTo(routeLinesGroup);
-                        } else {
-                            drawStraightPolylineFallback(polylinePoints);
-                        }
-                    })
-                    .catch(() => {
-                        drawStraightPolylineFallback(polylinePoints);
+                const profile = routingMode === 'car' ? 'driving' : 'foot';
+                fetchRouteGeometry(polylinePoints, profile).then(latsLongs => {
+                    const polyline = L.polyline(latsLongs, {
+                        color: routingMode === 'car' ? '#8b5cf6' : '#1e3a8a',
+                        weight: 5, opacity: 0.85, lineJoin: 'round'
                     });
+                    polyline.addTo(routeLinesGroup);
+                });
             }
         }
 
@@ -537,8 +407,7 @@
             const nuevaPos = prompt(`Mover tramo ${indexActual + 1} de ${activeRouteData.length} a la posición:`);
             if(!nuevaPos) return; const np = parseInt(nuevaPos, 10);
             if(isNaN(np) || np < 1 || np > activeRouteData.length) return alert("Posición inválida");
-            const item = activeRouteData.splice(indexActual, 1)[0];
-            activeRouteData.splice(np - 1, 0, item);
+            const item = activeRouteData.splice(indexActual, 1)[0]; activeRouteData.splice(np - 1, 0, item);
             saveStateToLocalStorage(); renderActiveRoute();
         }
 
@@ -560,12 +429,18 @@
         function removeSegment(id) { activeRouteData = activeRouteData.filter(s => s.id !== id); saveStateToLocalStorage(); renderActiveRoute(); }
         function invertirSentidoRutaCompleta() { activeRouteData.reverse(); saveStateToLocalStorage(); renderActiveRoute(); }
 
-        /* ALGORITMO TSP (Haversine) CLÚSTER POR CALLES (Mantenido para evitar caída del servidor con 80 puntos) */
+        /* ALGORITMO TSP DUAL (Peatón vs Vehículo) */
+        function handleOptimizeClick() {
+            if (routingMode === 'car') optimizeRouteCarTSP(); else optimizeRouteLocalTSP();
+        }
+
+        // OPTIMIZACIÓN LOCAL (Para Peatones - Basado en bloques)
         function calculateHaversineDistance(c1, c2) {
             const R = 6371e3; const lat1 = c1[0] * Math.PI / 180; const lat2 = c2[0] * Math.PI / 180;
             const a = Math.sin((c2[0] - c1[0]) * Math.PI / 180 / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin((c2[1] - c1[1]) * Math.PI / 180 / 2) ** 2;
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))); 
         }
+
         function optimizeRouteLocalTSP() {
             const valid = activeRouteData.filter(s => !s.pendingSync);
             if (valid.length < 2) return alert("Introduce 2 tramos sincronizados.");
@@ -589,6 +464,36 @@
             }
             activeRouteData = [...ruta, ...activeRouteData.filter(s => s.pendingSync)];
             saveStateToLocalStorage(); renderActiveRoute(); map.fitBounds(ruta.map(s => s.coords), { padding: [40, 40] }); switchTab('mapa');
+        }
+
+        // OPTIMIZACIÓN SERVIDOR (Para Coches - Usa OSRM Trip API)
+        async function optimizeRouteCarTSP() {
+            const tramosValidos = activeRouteData.filter(s => !s.pendingSync);
+            if (tramosValidos.length < 3) return alert("Introduce al menos 3 tramos sincronizados.");
+            if (tramosValidos.length > 90) return alert("El servidor OSRM no soporta más de 90 puntos para optimizar en coche de golpe. Usa el modo peatonal por bloques.");
+
+            const btn = document.getElementById("tspOptimizeBtn");
+            const originalText = btn.innerText; btn.disabled = true; btn.innerText = "Calculando Servidor...";
+
+            const coordsString = tramosValidos.map(s => `${s.coords[1]},${s.coords[0]}`).join(';');
+            const url = `https://router.project-osrm.org/trip/v1/driving/${coordsString}?source=first&destination=any&roundtrip=false`;
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("API Limit");
+                const data = await res.json();
+                if (data.code === "Ok" && data.waypoints) {
+                    const sortedWaypoints = data.waypoints.sort((a, b) => a.trips_index - b.trips_index);
+                    const optimizedData = sortedWaypoints.map(wp => tramosValidos[wp.waypoint_index]);
+                    const tramosOffline = activeRouteData.filter(s => s.pendingSync);
+                    activeRouteData = [...optimizedData, ...tramosOffline];
+                    saveStateToLocalStorage(); renderActiveRoute(); map.fitBounds(optimizedData.map(s => s.coords), { padding: [40, 40] }); switchTab('mapa');
+                } else { throw new Error("Invalid trip data"); }
+            } catch (err) {
+                alert("El servidor OSRM está saturado. Se mantendrá el orden actual de la lista. Prueba en unos minutos.");
+            } finally {
+                btn.disabled = false; btn.innerText = originalText;
+            }
         }
 
         /* --- HISTORIAL Y ARCHIVADO --- */
@@ -700,7 +605,6 @@
                 let estadoTxt = '';
                 if(s.estado === 'entregado') estadoTxt = '✅';
                 if(s.estado === 'error') estadoTxt = '❌';
-
                 const tr = document.createElement("tr");
                 tr.innerHTML = `<td style="text-align: center; font-weight: bold;">${i + 1}</td><td>${MUNICIPALITIES[s.municipality].name}</td><td style="font-weight: bold;">${s.street}</td><td style="text-align: center; font-weight: bold;">${s.portal}</td><td style="text-align: center;">${estadoTxt}</td>`;
                 tbody.appendChild(tr);
