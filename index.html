@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v6.6.0)</title>
+    <title>AmailIA - Optimización de Reparto (v6.7.0)</title>
     
+    <!-- METADATOS PARA EL ICONO EN ESCRITORIO MÓVIL -->
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
     <meta name="apple-mobile-web-app-title" content="AmailIA">
@@ -27,7 +28,7 @@
         
         /* ESTILOS DINÁMICOS DE ESTADO PARA MARCADORES */
         .route-idx-marker {
-            background-color: #1e3a8a; /* Pendiente (Azul) */
+            background-color: #1e3a8a; 
             color: #ffffff; border: 2px solid #ffffff;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-size: 13px; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
@@ -35,12 +36,12 @@
         }
         
         .route-idx-marker.estado-entregado {
-            background-color: #10b981; /* Entregado (Verde) */
-            opacity: 0.85; /* Un poco translúcido para que destaque menos */
+            background-color: #10b981; 
+            opacity: 0.85; 
         }
         
         .route-idx-marker.estado-error {
-            background-color: #ef4444; /* Error (Rojo) */
+            background-color: #ef4444; 
         }
 
         .history-idx-marker {
@@ -108,6 +109,17 @@
             <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700">
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Añadir Tramos</span>
+                    
+                    <!-- NUEVO INTERRUPTOR DE MODO DE ENRUTAMIENTO (PEATONAL / VEHÍCULO) -->
+                    <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-0.5 ml-2 mr-2 flex-1 max-w-[100px] justify-between">
+                        <button onclick="setRoutingMode('foot')" id="btn-mode-foot" class="flex-1 flex justify-center py-1 bg-white dark:bg-gray-600 rounded-md shadow-sm text-blue-600 dark:text-blue-400 transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"></path></svg>
+                        </button>
+                        <button onclick="setRoutingMode('car')" id="btn-mode-car" class="flex-1 flex justify-center py-1 text-gray-500 dark:text-gray-400 rounded-md transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"></path></svg>
+                        </button>
+                    </div>
+
                     <button type="button" onclick="activateMapPickerMode()" class="text-[10px] bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-1 px-2 rounded flex items-center space-x-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
                         <span>En Mapa</span>
@@ -194,7 +206,7 @@
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-950 text-white text-[11px] font-mono py-2 rounded-lg flex items-center justify-center space-x-2">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span>Comprobar OTA (v6.6.0)</span>
+                        <span>Comprobar OTA (v6.7.0)</span>
                     </button>
                 </div>
             </div>
@@ -232,7 +244,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "6.6.0";
+        const APP_VERSION = "6.7.0";
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -240,10 +252,30 @@
         };
 
         let currentMunicipality = 'catarroja';
+        let routingMode = 'foot'; // Novedad v6.7.0: 'foot' o 'car'
+        
         let map = null, mapTileLayer;
         let activeRouteData = []; 
         let routeMarkersGroup, routeLinesGroup, historyLayersGroup;
         let isMapPickingModeActive = false;
+
+        /* --- LÓGICA DE MODO DE ENRUTAMIENTO (PEATÓN/COCHE) --- */
+        function setRoutingMode(mode) {
+            routingMode = mode;
+            localStorage.setItem('amailia_routing_mode', mode);
+            
+            if(mode === 'foot') {
+                document.getElementById('btn-mode-foot').className = "flex-1 flex justify-center py-1 bg-white dark:bg-gray-600 rounded-md shadow-sm text-blue-600 dark:text-blue-400 transition-all";
+                document.getElementById('btn-mode-car').className = "flex-1 flex justify-center py-1 text-gray-500 dark:text-gray-400 rounded-md transition-all";
+            } else {
+                document.getElementById('btn-mode-car').className = "flex-1 flex justify-center py-1 bg-white dark:bg-gray-600 rounded-md shadow-sm text-blue-600 dark:text-blue-400 transition-all";
+                document.getElementById('btn-mode-foot').className = "flex-1 flex justify-center py-1 text-gray-500 dark:text-gray-400 rounded-md transition-all";
+            }
+            // Forzamos el redibujado de la ruta con las nuevas reglas de tráfico
+            if (activeRouteData.length > 1) {
+                renderActiveRoute();
+            }
+        }
 
         /* --- UI LOGIC: Pestañas y Bottom Sheet --- */
         function switchTab(tabId) {
@@ -294,6 +326,11 @@
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 document.getElementById('nightModeToggle').checked = true; toggleNightMode();
             }
+            
+            // Inicializar el interruptor de modo al arrancar
+            const savedMode = localStorage.getItem('amailia_routing_mode') || 'foot';
+            setRoutingMode(savedMode);
+            
             switchTab('ruta');
         });
 
@@ -362,7 +399,6 @@
                 }
                 if (!geoPoint) { isPendingSync = true; geoPoint = [...MUNICIPALITIES[currentMunicipality].coords]; }
                 
-                // Novedad v6.6.0: Añadimos la propiedad de estado (pendiente por defecto)
                 activeRouteData.push({ 
                     id: Date.now() + Math.random(), 
                     municipality: currentMunicipality, 
@@ -370,7 +406,7 @@
                     portal: portalNum, 
                     coords: geoPoint, 
                     pendingSync: isPendingSync,
-                    estado: 'pendiente' // 'pendiente', 'entregado', 'error'
+                    estado: 'pendiente'
                 });
             }
 
@@ -379,17 +415,22 @@
             submitBtn.disabled = false; syncPendingCoordinates();
         }
 
-        /* Novedad v6.6.0: Función global para cambiar el estado de un tramo desde el popup o la lista */
         window.cambiarEstadoTramo = function(id, nuevoEstado) {
             const tramo = activeRouteData.find(s => s.id === id);
             if (tramo) {
                 tramo.estado = tramo.estado === nuevoEstado ? 'pendiente' : nuevoEstado;
                 saveStateToLocalStorage();
                 renderActiveRoute();
-                // Opcional: Cerrar popup tras pulsar
                 map.closePopup();
             }
         };
+
+        function drawStraightPolylineFallback(points) {
+            const polyline = L.polyline(points, {
+                color: '#1e3a8a', weight: 4, opacity: 0.8, dashArray: '8, 12', lineJoin: 'round'
+            });
+            polyline.addTo(routeLinesGroup);
+        }
 
         function renderActiveRoute() {
             routeMarkersGroup.clearLayers(); routeLinesGroup.clearLayers();
@@ -403,7 +444,6 @@
                 const step = index + 1;
                 if (segment.pendingSync) pendingSyncCount++; else polylinePoints.push(segment.coords);
 
-                // Asignación dinámica de clases CSS según el estado del tramo
                 let estadoClassMarker = '';
                 let estadoIconLista = '';
                 if (segment.estado === 'entregado') {
@@ -422,7 +462,6 @@
                         iconAnchor: [14, 14] 
                     });
 
-                    // Construcción del Popup interactivo con botones de estado
                     const popupContent = `
                         <div style="font-family: sans-serif; text-align: center;">
                             <b>Tramo #${step}</b><br>${segment.street}, Nº${segment.portal}
@@ -436,9 +475,8 @@
                     L.marker(segment.coords, { icon: customIcon }).bindPopup(popupContent).addTo(routeMarkersGroup);
                 }
 
-                // Renderizado en la lista del panel
                 let borderLeftClass = segment.pendingSync ? 'border-amber-500' : 'border-blue-700';
-                if (segment.estado === 'entregado') borderLeftClass = 'border-green-500 opacity-60'; // Atenuar un poco si ya está entregado
+                if (segment.estado === 'entregado') borderLeftClass = 'border-green-500 opacity-60';
                 if (segment.estado === 'error') borderLeftClass = 'border-red-500';
 
                 const row = document.createElement("div"); 
@@ -458,7 +496,41 @@
 
             const syncBtn = document.getElementById("syncQueueBtn");
             if (pendingSyncCount > 0) { syncBtn.classList.remove("hidden"); syncBtn.textContent = `Sync (${pendingSyncCount})`; } else { syncBtn.classList.add("hidden"); }
-            if (polylinePoints.length > 1) L.polyline(polylinePoints, { color: '#1e3a8a', weight: 4, opacity: 0.8, dashArray: '6, 10' }).addTo(routeLinesGroup);
+            
+            // RENDERING DINÁMICO DE LA LÍNEA DEL MAPA (Basado en el modo seleccionado)
+            if (polylinePoints.length > 1) {
+                const coordsString = polylinePoints.map(c => `${c[1]},${c[0]}`).join(';');
+                let url = '';
+                
+                if (routingMode === 'car') {
+                    // Perfil de conducción (respeta sentidos únicos, glorietas, etc.)
+                    url = `https://router.openstreetmap.de/routed-car/route/v1/driving/${coordsString}?overview=full&geometries=geojson`;
+                } else {
+                    // Perfil peatonal estricto
+                    url = `https://router.openstreetmap.de/routed-foot/route/v1/foot/${coordsString}?overview=full&geometries=geojson`;
+                }
+
+                fetch(url)
+                    .then(res => {
+                        if (!res.ok) throw new Error("API Limit");
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data.code === "Ok" && data.routes && data.routes[0]) {
+                            const latsLongs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                            const polyline = L.polyline(latsLongs, {
+                                color: routingMode === 'car' ? '#8b5cf6' : '#1e3a8a', // Morado para coche, Azul para peatón
+                                weight: 5, opacity: 0.85, lineJoin: 'round'
+                            });
+                            polyline.addTo(routeLinesGroup);
+                        } else {
+                            drawStraightPolylineFallback(polylinePoints);
+                        }
+                    })
+                    .catch(() => {
+                        drawStraightPolylineFallback(polylinePoints);
+                    });
+            }
         }
 
         function solicitarCambioPosicionDirecto(indexActual) {
@@ -488,7 +560,7 @@
         function removeSegment(id) { activeRouteData = activeRouteData.filter(s => s.id !== id); saveStateToLocalStorage(); renderActiveRoute(); }
         function invertirSentidoRutaCompleta() { activeRouteData.reverse(); saveStateToLocalStorage(); renderActiveRoute(); }
 
-        /* ALGORITMO TSP (Haversine) */
+        /* ALGORITMO TSP (Haversine) CLÚSTER POR CALLES (Mantenido para evitar caída del servidor con 80 puntos) */
         function calculateHaversineDistance(c1, c2) {
             const R = 6371e3; const lat1 = c1[0] * Math.PI / 180; const lat2 = c2[0] * Math.PI / 180;
             const a = Math.sin((c2[0] - c1[0]) * Math.PI / 180 / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin((c2[1] - c1[1]) * Math.PI / 180 / 2) ** 2;
@@ -661,7 +733,7 @@
         }
 
         function toggleNightMode() { const isDark = document.getElementById("nightModeToggle").checked; document.documentElement.classList.toggle("dark", isDark); }
-        function saveStateToLocalStorage() { localStorage.setItem("amailia_active_route", JSON.stringify(activeRouteData)); localStorage.setItem("amailia_current_muni", currentMunicipality); }
+        function saveStateToLocalStorage() { localStorage.setItem("amailia_active_route", JSON.stringify(activeRouteData)); localStorage.setItem("amailia_routing_mode", routingMode); }
         function loadStateFromLocalStorage() { const r = localStorage.getItem("amailia_active_route"); const m = localStorage.getItem("amailia_current_muni"); if(r) activeRouteData = JSON.parse(r); if(m) switchMunicipality(m); }
     </script>
 </body>
