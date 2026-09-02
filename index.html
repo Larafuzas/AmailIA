@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v7.2.0)</title>
+    <title>AmailIA - Optimización de Reparto (v7.3.0)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
@@ -32,11 +32,7 @@
         
         .route-idx-marker-car { background-color: #8b5cf6; } 
 
-        /* Nuevas clases para Paquetería vs Notificaciones */
-        .route-idx-marker.estado-paquete {
-            background-color: #eab308; color: #000000; border-color: #ffffff;
-        }
-
+        .route-idx-marker.estado-paquete { background-color: #eab308; color: #000000; border-color: #ffffff; }
         .route-idx-marker.estado-entregado { background-color: #10b981; color: #ffffff; opacity: 0.85; border-color: #ffffff; }
         .route-idx-marker.estado-error { background-color: #ef4444; color: #ffffff; border-color: #ffffff; }
 
@@ -67,12 +63,10 @@
 </head>
 <body class="flex flex-col h-[100dvh] w-full overflow-hidden bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 select-none">
 
-    <!-- MAPA Y CONTROLES FLOTANTES -->
     <div id="map-wrapper" class="flex-1 relative z-0 w-full">
         <div class="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-black/50 to-transparent z-[400] pointer-events-none"></div>
         <div id="map" class="h-full w-full"></div>
 
-        <!-- SELECTOR FLOTANTE DE FILTROS EN MAPA (T, N, P) -->
         <div id="mapFilterSelector" class="absolute right-4 z-[400] flex flex-col gap-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-1.5 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 transition-all" style="top: calc(75px + env(safe-area-inset-top));">
             <button onclick="setMapFilter('T')" id="filter-T" class="w-8 h-8 rounded-lg font-bold text-xs bg-blue-600 text-white shadow-sm transition-all" aria-label="Todas">T</button>
             <button onclick="setMapFilter('N')" id="filter-N" class="w-8 h-8 rounded-lg font-bold text-xs text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-all" aria-label="Notificaciones">N</button>
@@ -93,13 +87,11 @@
         </button>
     </div>
 
-    <!-- PANEL INFERIOR DESLIZANTE -->
     <div id="bottom-sheet" class="bg-white dark:bg-gray-900 rounded-t-3xl shadow-[0_-15px_40px_rgba(0,0,0,0.15)] z-40 w-full flex flex-col border-t border-gray-200 dark:border-gray-800 h-[60dvh]">
         <div class="w-full flex justify-center pt-3 pb-2 shrink-0 cursor-pointer" onclick="switchTab('mapa')">
             <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
         </div>
 
-        <!-- VISTA: RUTA / OPERATIVA -->
         <div id="view-ruta" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-4 hidden">
             <div class="grid grid-cols-3 gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shrink-0">
                 <button onclick="switchMunicipality('catarroja')" id="tab-catarroja" class="tab-btn py-2 text-xs font-bold rounded-lg transition-all bg-white dark:bg-gray-700 shadow-sm text-blue-900 dark:text-white">Catarroja</button>
@@ -116,7 +108,6 @@
                     </button>
                 </div>
 
-                <!-- SELECTOR DE TIPO (NOTIFICACIONES VS PAQUETERÍA) -->
                 <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1 mb-3">
                     <button type="button" onclick="setTipoIngreso('notificacion')" id="btn-tipo-notificacion" class="flex-1 py-1.5 text-xs font-bold bg-white dark:bg-gray-600 rounded-md shadow-sm text-blue-800 dark:text-blue-300 transition-all">✉️ Notificaciones</button>
                     <button type="button" onclick="setTipoIngreso('paquete')" id="btn-tipo-paquete" class="flex-1 py-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 rounded-md transition-all">📦 Paquetería</button>
@@ -157,7 +148,6 @@
             </div>
         </div>
 
-        <!-- VISTA: HISTORIAL -->
         <div id="view-historial" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-4 hidden">
             <button onclick="archiveCurrentJob()" class="w-full bg-emerald-600 text-white text-xs font-bold py-3 rounded-xl shadow mt-2">Archivar Jornada Actual</button>
             <div>
@@ -166,7 +156,6 @@
             </div>
         </div>
 
-        <!-- VISTA: AJUSTES -->
         <div id="view-ajustes" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-5 hidden">
             <div class="mt-2">
                 <button onclick="ejecutarImpresionJornada()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md text-xs flex justify-center items-center space-x-2">
@@ -207,7 +196,7 @@
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-950 text-white text-[11px] font-mono py-2 rounded-lg flex items-center justify-center space-x-2">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span>Comprobar OTA (v7.2.0)</span>
+                        <span>Comprobar OTA (v7.3.0)</span>
                     </button>
                 </div>
             </div>
@@ -236,7 +225,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "7.2.0";
+        const APP_VERSION = "7.3.0";
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -246,14 +235,13 @@
         let currentMunicipality = 'catarroja';
         let routingMode = 'foot'; 
         let currentTipoIngreso = 'notificacion';
-        let currentMapFilter = 'T'; // 'T' = Todas, 'N' = Notificaciones, 'P' = Paquetería
+        let currentMapFilter = 'T'; 
         
         let map = null, mapTileLayer;
         let activeRouteData = []; 
         let routeMarkersGroup, routeLinesGroup, historyLayersGroup;
         let isMapPickingModeActive = false;
 
-        /* --- CONTROLADORES DE ESTADO GLOBALES --- */
         function setTipoIngreso(tipo) {
             currentTipoIngreso = tipo;
             if (tipo === 'notificacion') {
@@ -281,7 +269,6 @@
         function setRoutingMode(mode) {
             routingMode = mode;
             localStorage.setItem('amailia_routing_mode', mode);
-            const btnOpt = document.getElementById('tspOptimizeBtn');
             if(mode === 'foot') {
                 document.getElementById('btn-mode-foot').className = "px-3 flex justify-center py-1 bg-white dark:bg-gray-600 rounded-md shadow-sm text-blue-600 dark:text-blue-400 transition-all";
                 document.getElementById('btn-mode-car').className = "px-3 flex justify-center py-1 text-gray-500 dark:text-gray-400 rounded-md transition-all";
@@ -292,7 +279,6 @@
             if (activeRouteData.length > 1) renderActiveRoute();
         }
 
-        /* --- UI LOGIC: Pestañas y Bottom Sheet --- */
         function switchTab(tabId) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById(`nav-${tabId}`).classList.add('active');
@@ -373,7 +359,7 @@
                     coords: geoPoint, 
                     pendingSync: isPendingSync, 
                     estado: 'pendiente',
-                    tipo: currentTipoIngreso // Novedad v7.2.0: Guardamos el tipo asignado en la UI
+                    tipo: currentTipoIngreso 
                 });
             }
             saveStateToLocalStorage(); renderActiveRoute(); document.getElementById("routeForm").reset(); document.getElementById("customCoordsInput").value = ""; submitBtn.disabled = false; syncPendingCoordinates();
@@ -399,10 +385,8 @@
 
             activeRouteData.forEach((segment, index) => {
                 const step = index + 1;
-                // Retrocompatibilidad con datos antiguos que no tenían .tipo
                 const tipoReal = segment.tipo || 'notificacion';
 
-                // LÓGICA DE FILTRADO
                 if (currentMapFilter === 'N' && tipoReal === 'paquete') return;
                 if (currentMapFilter === 'P' && tipoReal === 'notificacion') return;
 
@@ -475,7 +459,6 @@
         function removeSegment(id) { activeRouteData = activeRouteData.filter(s => s.id !== id); saveStateToLocalStorage(); renderActiveRoute(); }
         function invertirSentidoRutaCompleta() { activeRouteData.reverse(); saveStateToLocalStorage(); renderActiveRoute(); }
 
-        /* ALGORITMO TSP LOCAL UNIFICADO (Peatón vs Vehículo) */
         function handleOptimizeClick() { optimizeRouteLocalTSP(); }
         function calculateHaversineDistance(c1, c2) {
             const R = 6371e3; const lat1 = c1[0] * Math.PI / 180; const lat2 = c2[0] * Math.PI / 180;
@@ -517,7 +500,6 @@
             saveStateToLocalStorage(); renderActiveRoute(); map.fitBounds(ruta.map(s => s.coords), { padding: [40, 40] }); switchTab('mapa');
         }
 
-        /* --- HISTORIAL Y ARCHIVADO --- */
         function archiveCurrentJob() {
             if (activeRouteData.length === 0) return alert("Sin datos.");
             let h = JSON.parse(localStorage.getItem("amailia_history") || "[]");
@@ -556,7 +538,6 @@
         });
         function deleteHistoryJob(idx) { if(!confirm("¿Borrar?")) return; let h = JSON.parse(localStorage.getItem("amailia_history")); h.splice(idx,1); localStorage.setItem("amailia_history", JSON.stringify(h)); renderHistoryFileList(); }
 
-        /* --- OFFLINE, BACKUP E IMPRESIÓN --- */
         async function downloadMapTilesOffline() {
             if (!('caches' in window)) return alert("Cache API no soportada.");
             if (!navigator.onLine) return alert("Conecta a internet primero.");
@@ -634,10 +615,32 @@
             setTimeout(() => window.print(), 350);
         }
 
-        function triggerBackup() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ activeRoute: activeRouteData, history: JSON.parse(localStorage.getItem("amailia_history") || "[]") }));
-            const a = document.createElement('a'); a.href = dataStr; a.download = `amailia_v${APP_VERSION}_backup.json`; a.click();
+        /* --- NUEVO SISTEMA DE BACKUP COMPATIBLE CON IOS WEB APP (PWA) --- */
+        async function triggerBackup() {
+            const backupData = JSON.stringify({ activeRoute: activeRouteData, history: JSON.parse(localStorage.getItem("amailia_history") || "[]") });
+            const fileName = `amailia_v${APP_VERSION}_backup.json`;
+            
+            if (navigator.share && navigator.canShare) {
+                try {
+                    const file = new File([backupData], fileName, { type: "application/json" });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Backup AmailIA',
+                            text: 'Copia de seguridad de rutas y paquetería'
+                        });
+                        return;
+                    }
+                } catch (err) {
+                    console.log("Exportación nativa cancelada o fallida", err);
+                }
+            }
+            
+            // Fallback para escritorio/Android si navigator.share falla
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(backupData);
+            const a = document.createElement('a'); a.href = dataStr; a.download = fileName; a.click();
         }
+
         function triggerRestore() { document.getElementById("importFileInput").click(); }
         function handleImportFile(e) {
             const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
