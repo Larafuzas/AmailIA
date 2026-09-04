@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v7.4.0)</title>
+    <title>AmailIA - Optimización de Reparto (v7.6.0)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
@@ -63,7 +63,6 @@
 </head>
 <body class="flex flex-col h-[100dvh] w-full overflow-hidden bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 select-none">
 
-    <!-- VISOR DE MAPAS DE BARRIOS (MODAL FLOTANTE NATIVO) -->
     <div id="barriosModal" class="fixed inset-0 bg-black z-[1000] hidden flex-col touch-none">
         <div class="absolute top-0 right-0 left-0 p-4 flex justify-end z-50 bg-gradient-to-b from-black/70 to-transparent pt-safe">
             <button onclick="closeBarrio()" class="bg-white/20 backdrop-blur text-white p-2.5 rounded-full active:scale-95 transition-transform">
@@ -127,7 +126,7 @@
 
                 <form id="routeForm" onsubmit="handleFormSubmit(event)" class="space-y-2 relative">
                     <input type="hidden" id="customCoordsInput" value="">
-                    <input type="text" id="streetInput" autocomplete="off" placeholder="Calle o Plaza" class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-600 dark:text-white" required>
+                    <input type="text" id="streetInput" autocomplete="off" placeholder="Calle, Plaza, Polígono..." class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-600 dark:text-white" required>
                     <div id="autocompleteList" class="absolute top-20 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-40 overflow-y-auto hidden z-50"></div>
                     
                     <div class="flex space-x-2">
@@ -177,7 +176,7 @@
             </div>
 
             <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Datos Offline</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Datos Offline (Polígonos Inc.)</label>
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-medium dark:text-gray-300">Calles y Plazas</span>
                     <span id="dbSizeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700">Vacío</span>
@@ -191,9 +190,8 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN NUEVA: MAPAS DE BARRIOS -->
             <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Barrios</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Barrios (Mapas .heic)</label>
                 <div class="grid grid-cols-3 gap-2">
                     <button onclick="openBarrio('catarroja')" class="text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2 rounded-lg font-bold shadow-sm dark:text-white">Catarroja</button>
                     <button onclick="openBarrio('albal')" class="text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2 rounded-lg font-bold shadow-sm dark:text-white">Albal</button>
@@ -218,7 +216,7 @@
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-950 text-white text-[11px] font-mono py-2 rounded-lg flex items-center justify-center space-x-2">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span>Comprobar OTA (v7.4.0)</span>
+                        <span>Comprobar OTA (v7.6.0)</span>
                     </button>
                 </div>
             </div>
@@ -247,7 +245,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "7.4.0";
+        const APP_VERSION = "7.6.0";
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -389,15 +387,26 @@
             const streetName = document.getElementById("streetInput").value.trim(); const portalesLote = document.getElementById("portalInput").value.split(',').map(p => p.trim()).filter(p => p !== "");
             const customCoordsRaw = document.getElementById("customCoordsInput").value; submitBtn.disabled = true;
 
+            const mName = MUNICIPALITIES[currentMunicipality].name;
+            const mCP = MUNICIPALITIES[currentMunicipality].cp; // Obtenemos el CP para blindar la búsqueda (v7.6.0)
+
             for (let portalToken of portalesLote) {
                 const portalNum = parseInt(portalToken, 10); if (isNaN(portalNum)) continue;
                 let geoPoint = null; let isPendingSync = false;
                 if (customCoordsRaw) { geoPoint = JSON.parse(customCoordsRaw); } 
                 else if (navigator.onLine) {
                     try {
-                        const mName = MUNICIPALITIES[currentMunicipality].name;
-                        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${mName},+Valencia&limit=1`);
-                        const data = await res.json(); if (data && data.length > 0) geoPoint = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                        // MEJORA 7.6.0: Eliminado fallback expansivo ("+Valencia"). Usamos Código Postal para mayor precisión local.
+                        const searchQueries = [
+                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${mName},+Valencia&limit=1`,
+                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${mCP},+Valencia&limit=1`,
+                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)},+${mName},+Valencia&limit=1` 
+                        ];
+                        for (let url of searchQueries) {
+                            const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
+                            const data = await res.json();
+                            if (data && data.length > 0) { geoPoint = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; break; }
+                        }
                     } catch (err) {}
                 }
                 if (!geoPoint) { isPendingSync = true; geoPoint = [...MUNICIPALITIES[currentMunicipality].coords]; }
@@ -498,9 +507,16 @@
                 if (segment.pendingSync) {
                     try {
                         const mName = MUNICIPALITIES[segment.municipality].name;
-                        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(segment.street)}+${segment.portal},+${mName},+Valencia&limit=1`);
-                        const data = await res.json();
-                        if (data && data.length > 0) { segment.coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; segment.pendingSync = false; changed = true; }
+                        const mCP = MUNICIPALITIES[segment.municipality].cp;
+                        const searchQueries = [
+                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(segment.street)}+${segment.portal},+${mName},+Valencia&limit=1`,
+                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(segment.street)}+${segment.portal},+${mCP},+Valencia&limit=1`
+                        ];
+                        for (let url of searchQueries) {
+                            const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
+                            const data = await res.json();
+                            if (data && data.length > 0) { segment.coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; segment.pendingSync = false; changed = true; break; }
+                        }
                     } catch (err) {}
                 }
             }
@@ -621,14 +637,24 @@
 
         async function downloadCallejeroOverpass() {
             try {
-                const q = `[out:json];area["name"="${MUNICIPALITIES[currentMunicipality].name}"]["admin_level"="8"]->.searchArea;(nwr["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary"](area.searchArea);nwr["place"~"square|neighbourhood"](area.searchArea););out tags;`;
+                const lat = MUNICIPALITIES[currentMunicipality].coords[0];
+                const lon = MUNICIPALITIES[currentMunicipality].coords[1];
+                
+                const q = `[out:json];(nwr["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary|trunk|track|road|industrial"](around:4500,${lat},${lon});nwr["place"~"square|neighbourhood"](around:4500,${lat},${lon}););out tags;`;
+                
                 const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
                 const data = await res.json(); const vias = new Set();
-                data.elements.forEach(el => { if (el.tags && el.tags.name) vias.add(el.tags.name.trim()); });
+                data.elements.forEach(el => { 
+                    if (el.tags) {
+                        if (el.tags.name) vias.add(el.tags.name.trim());
+                        else if (el.tags.ref) vias.add(el.tags.ref.trim());
+                    }
+                });
                 localStorage.setItem(`amailia_db_vias_${currentMunicipality}`, JSON.stringify(Array.from(vias).sort()));
-                updateCallejeroStatusUI(); alert("Calles guardadas.");
-            } catch (err) { alert("Error al bajar calles."); }
+                updateCallejeroStatusUI(); alert("Calles de municipio y polígonos guardadas.");
+            } catch (err) { alert("Error al bajar calles. El servidor puede estar saturado, intenta en unos minutos."); }
         }
+
         function clearCallejeroLocal() { localStorage.removeItem(`amailia_db_vias_${currentMunicipality}`); updateCallejeroStatusUI(); }
         function updateCallejeroStatusUI() {
             const data = localStorage.getItem(`amailia_db_vias_${currentMunicipality}`);
@@ -636,18 +662,23 @@
             if(data) { b.textContent = `${JSON.parse(data).length} calles`; b.className = "text-[10px] px-2 py-0.5 rounded bg-green-600 text-white"; }
             else { b.textContent = "Vacío"; b.className = "text-[10px] px-2 py-0.5 rounded bg-red-600 text-white"; }
         }
+        
         document.getElementById("streetInput").addEventListener("input", (e) => {
             const q = e.target.value.toLowerCase(); const list = document.getElementById("autocompleteList");
             if(q.length < 3) return list.classList.add("hidden");
-            const data = localStorage.getItem(`amailia_db_vias_${currentMunicipality}`); if(!data) return;
-            const calles = JSON.parse(data).filter(c => c.toLowerCase().includes(q)).slice(0, 5);
-            list.innerHTML = "";
-            calles.forEach(c => {
-                const div = document.createElement("div"); div.className = "px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-gray-200 border-b border-gray-100 dark:border-gray-700";
-                div.innerText = c; div.onclick = () => { document.getElementById("streetInput").value = c; list.classList.add("hidden"); document.getElementById("portalInput").focus(); };
-                list.appendChild(div);
-            });
-            calles.length > 0 ? list.classList.remove("hidden") : list.classList.add("hidden");
+            
+            const data = localStorage.getItem(`amailia_db_vias_${currentMunicipality}`); 
+            if(data) {
+                const calles = JSON.parse(data).filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+                list.innerHTML = "";
+                calles.forEach(c => {
+                    const div = document.createElement("div"); div.className = "px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-gray-200 border-b border-gray-100 dark:border-gray-700";
+                    div.innerText = c; div.onclick = () => { document.getElementById("streetInput").value = c; list.classList.add("hidden"); document.getElementById("portalInput").focus(); };
+                    list.appendChild(div);
+                });
+                if (calles.length > 0) { list.classList.remove("hidden"); return; }
+            }
+            list.classList.add("hidden");
         });
 
         function ejecutarImpresionJornada() {
