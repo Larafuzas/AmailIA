@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v7.8.0)</title>
+    <title>AmailIA - Optimización de Reparto (v8.0.0)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
@@ -106,7 +106,6 @@
             <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
         </div>
 
-        <!-- PESTAÑA RUTA -->
         <div id="view-ruta" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-4 hidden">
             <div class="grid grid-cols-3 gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shrink-0">
                 <button onclick="switchMunicipality('catarroja')" id="tab-catarroja" class="tab-btn py-2 text-xs font-bold rounded-lg transition-all bg-white dark:bg-gray-700 shadow-sm text-blue-900 dark:text-white">Catarroja</button>
@@ -163,7 +162,6 @@
             </div>
         </div>
 
-        <!-- PESTAÑA HISTORIAL -->
         <div id="view-historial" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-4 hidden">
             <button onclick="archiveCurrentJob()" class="w-full bg-emerald-600 text-white text-xs font-bold py-3 rounded-xl shadow mt-2">Archivar Jornada Actual</button>
             <div>
@@ -172,7 +170,6 @@
             </div>
         </div>
 
-        <!-- PESTAÑA AJUSTES -->
         <div id="view-ajustes" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-5 hidden">
             <div class="mt-2">
                 <button onclick="ejecutarImpresionJornada()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md text-xs flex justify-center items-center space-x-2">
@@ -182,7 +179,7 @@
             </div>
 
             <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Datos Offline (Polígonos Inc.)</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Datos Offline</label>
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-medium dark:text-gray-300">Calles y Plazas</span>
                     <span id="dbSizeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700">Vacío</span>
@@ -222,14 +219,13 @@
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-950 text-white text-[11px] font-mono py-2 rounded-lg flex items-center justify-center space-x-2">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span>Comprobar OTA (v7.8.0)</span>
+                        <span>Comprobar OTA (v8.0.0)</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- NAVEGACIÓN -->
     <nav id="bottom-nav" class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-50 shrink-0 flex justify-around items-center px-2 pt-2.5 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
         <button onclick="switchTab('mapa')" id="nav-mapa" class="nav-item active flex flex-col items-center justify-center w-full text-gray-500 dark:text-gray-400">
             <svg class="w-7 h-7 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
@@ -252,7 +248,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "7.8.0";
+        const APP_VERSION = "8.0.0";
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -389,33 +385,55 @@
             switchTab('ruta'); document.getElementById("portalInput").focus();
         }
 
+        // --- SISTEMA DE VALIDACIÓN ESTRICTA MUNICIPAL ---
+        async function geocodeStrict(streetName, portalNum, muniKey) {
+            const mName = MUNICIPALITIES[muniKey].name;
+            // Se elimina la búsqueda expansiva y se obliga a Nominatim a devolver los detalles administrativos (addressdetails=1)
+            const searchUrls = [
+                `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(portalNum + ' ' + streetName)}&city=${encodeURIComponent(mName)}&county=Valencia&country=España&addressdetails=1&limit=5`,
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName + ' ' + portalNum + ', ' + mName + ', Valencia')}&addressdetails=1&limit=5`
+            ];
+
+            for (let url of searchUrls) {
+                try {
+                    const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
+                    const data = await res.json();
+                    if (data && data.length > 0) {
+                        for (let item of data) {
+                            if (item.address) {
+                                // Extraemos el municipio devuelto por el servidor
+                                const town = item.address.town || item.address.city || item.address.village || item.address.municipality || "";
+                                // VALLA ESTRICTA: Solo acepta coordenadas si el servidor confirma que pertenecen a este pueblo
+                                if (town.toLowerCase() === mName.toLowerCase()) {
+                                    return [parseFloat(item.lat), parseFloat(item.lon)];
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {}
+            }
+            return null; // Si no encuentra coincidencia estricta en el municipio, se rechaza
+        }
+
         async function handleFormSubmit(event) {
             event.preventDefault(); const submitBtn = document.getElementById("submitBtn");
             const streetName = document.getElementById("streetInput").value.trim(); const portalesLote = document.getElementById("portalInput").value.split(',').map(p => p.trim()).filter(p => p !== "");
             const customCoordsRaw = document.getElementById("customCoordsInput").value; submitBtn.disabled = true;
 
-            const mName = MUNICIPALITIES[currentMunicipality].name;
-            const mCP = MUNICIPALITIES[currentMunicipality].cp; 
-
             for (let portalToken of portalesLote) {
                 const portalNum = parseInt(portalToken, 10); if (isNaN(portalNum)) continue;
                 let geoPoint = null; let isPendingSync = false;
-                if (customCoordsRaw) { geoPoint = JSON.parse(customCoordsRaw); } 
-                else if (navigator.onLine) {
-                    try {
-                        // MEJORA 7.8.0: Búsqueda súper estricta para evitar que los puntos salten a pueblos vecinos
-                        const searchQueries = [
-                            `https://nominatim.openstreetmap.org/search?format=json&street=${portalNum}+${encodeURIComponent(streetName)}&city=${mName}&county=Valencia&country=España&limit=1`,
-                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName)}+${portalNum},+${mCP},+Valencia&limit=1`
-                        ];
-                        for (let url of searchQueries) {
-                            const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
-                            const data = await res.json();
-                            if (data && data.length > 0) { geoPoint = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; break; }
-                        }
-                    } catch (err) {}
+                
+                if (customCoordsRaw) { 
+                    geoPoint = JSON.parse(customCoordsRaw); 
+                } else if (navigator.onLine) {
+                    geoPoint = await geocodeStrict(streetName, portalNum, currentMunicipality);
                 }
-                if (!geoPoint) { isPendingSync = true; geoPoint = [...MUNICIPALITIES[currentMunicipality].coords]; }
+                
+                if (!geoPoint) { 
+                    isPendingSync = true; 
+                    geoPoint = [...MUNICIPALITIES[currentMunicipality].coords]; 
+                }
                 
                 activeRouteData.push({ 
                     id: Date.now() + Math.random(), 
@@ -472,8 +490,7 @@
                 if (!segment.pendingSync) {
                     const customIcon = L.divIcon({ className: `route-idx-marker ${estadoClassMarker}`, html: `<span style="color:${colorTextoMarcador};">${step}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] });
                     const popupContent = `<div style="font-family: sans-serif; text-align: center;"><b>Tramo #${step}</b><br>${segment.street}, Nº${segment.portal}<div style="margin-top: 8px; display: flex; gap: 4px; justify-content: center;"><a href="http://maps.apple.com/?daddr=${segment.coords[0]},${segment.coords[1]}" target="_blank" style="flex: 1; background: #333; color: white; text-decoration: none; padding: 5px 0; border-radius: 4px; font-size: 11px; font-weight: bold;">🍏 Apple</a><a href="https://www.google.com/maps/dir/?api=1&destination=${segment.coords[0]},${segment.coords[1]}" target="_blank" style="flex: 1; background: #4285F4; color: white; text-decoration: none; padding: 5px 0; border-radius: 4px; font-size: 11px; font-weight: bold;">🗺️ Google</a></div><div style="margin-top: 4px; display: flex; gap: 4px; justify-content: center;"><button onclick="cambiarEstadoTramo(${segment.id}, 'entregado')" style="flex: 1; background: #10b981; color: white; border: none; padding: 5px 0; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">✓ Entregar</button><button onclick="cambiarEstadoTramo(${segment.id}, 'error')" style="flex: 1; background: #ef4444; color: white; border: none; padding: 5px 0; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">✗ Error</button></div></div>`;
-                    
-                    // MEJORA 7.8.0: Arrastre manual (Drag & Drop) deshabilitado para evitar desplazamientos accidentales
+                    // Ya no tienen propiedad 'draggable', el punto se queda anclado.
                     L.marker(segment.coords, { icon: customIcon }).bindPopup(popupContent).addTo(routeMarkersGroup);
                 }
 
@@ -513,19 +530,12 @@
             if (!navigator.onLine) return; let changed = false;
             for (let segment of activeRouteData) {
                 if (segment.pendingSync) {
-                    try {
-                        const mName = MUNICIPALITIES[segment.municipality].name;
-                        const mCP = MUNICIPALITIES[segment.municipality].cp;
-                        const searchQueries = [
-                            `https://nominatim.openstreetmap.org/search?format=json&street=${segment.portal}+${encodeURIComponent(segment.street)}&city=${mName}&county=Valencia&country=España&limit=1`,
-                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(segment.street)}+${segment.portal},+${mCP},+Valencia&limit=1`
-                        ];
-                        for (let url of searchQueries) {
-                            const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
-                            const data = await res.json();
-                            if (data && data.length > 0) { segment.coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; segment.pendingSync = false; changed = true; break; }
-                        }
-                    } catch (err) {}
+                    const pt = await geocodeStrict(segment.street, segment.portal, segment.municipality);
+                    if (pt) { 
+                        segment.coords = pt; 
+                        segment.pendingSync = false; 
+                        changed = true; 
+                    }
                 }
             }
             if (changed) { saveStateToLocalStorage(); renderActiveRoute(); }
@@ -643,11 +653,10 @@
             btn.disabled = false;
         }
 
-        // MEJORA 7.8.0: Combinación de límite estricto de municipio (admin_level=8) con todos los tipos de vía para incluir polígonos sin solaparse con otros pueblos.
         async function downloadCallejeroOverpass() {
             try {
+                // Recuperado el filtro por límite oficial de municipio (admin_level=8)
                 const q = `[out:json];area["name"="${MUNICIPALITIES[currentMunicipality].name}"]["admin_level"="8"]->.searchArea;(nwr["highway"~"residential|unclassified|pedestrian|living_street|service|tertiary|secondary|primary|trunk|track|road|industrial"](area.searchArea);nwr["place"~"square|neighbourhood"](area.searchArea););out tags;`;
-                
                 const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
                 const data = await res.json(); const vias = new Set();
                 data.elements.forEach(el => { 
@@ -657,7 +666,7 @@
                     }
                 });
                 localStorage.setItem(`amailia_db_vias_${currentMunicipality}`, JSON.stringify(Array.from(vias).sort()));
-                updateCallejeroStatusUI(); alert("Calles de municipio y polígonos guardadas.");
+                updateCallejeroStatusUI(); alert("Calles guardadas estrictamente para " + MUNICIPALITIES[currentMunicipality].name);
             } catch (err) { alert("Error al bajar calles. El servidor puede estar saturado, intenta en unos minutos."); }
         }
 
