@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v8.3.0)</title>
+    <title>AmailIA - Optimización de Reparto (v8.4.0)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
@@ -105,19 +105,19 @@
     </div>
 
     <!-- PANEL INFERIOR -->
-    <div id="bottom-sheet" class="bg-white dark:bg-gray-900 rounded-t-3xl shadow-[0_-15px_40px_rgba(0,0,0,0.15)] z-40 w-full flex flex-col border-t border-gray-200 dark:border-gray-800 h-[60dvh]">
+    <div id="bottom-sheet" class="bg-white dark:bg-gray-900 rounded-t-3xl shadow-[0_-15px_40px_rgba(0,0,0,0.15)] z-40 w-full flex flex-col border-t border-gray-200 dark:border-gray-800 h-[85dvh]">
         <div class="w-full flex justify-center pt-3 pb-2 shrink-0 cursor-pointer" onclick="switchTab('mapa')">
             <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
         </div>
 
-        <div id="view-ruta" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-4 hidden">
+        <div id="view-ruta" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-4 hidden flex flex-col">
             <div class="grid grid-cols-3 gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shrink-0">
                 <button onclick="switchMunicipality('catarroja')" id="tab-catarroja" class="tab-btn py-2 text-xs font-bold rounded-lg transition-all bg-white dark:bg-gray-700 shadow-sm text-blue-900 dark:text-white">Catarroja</button>
                 <button onclick="switchMunicipality('albal')" id="tab-albal" class="tab-btn py-2 text-xs font-semibold rounded-lg transition-all text-gray-500 dark:text-gray-400">Albal</button>
                 <button onclick="switchMunicipality('massanassa')" id="tab-massanassa" class="tab-btn py-2 text-xs font-semibold rounded-lg transition-all text-gray-500 dark:text-gray-400">Massanassa</button>
             </div>
 
-            <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 shrink-0">
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Añadir Tramos</span>
                     <button type="button" onclick="activateMapPickerMode()" class="text-[10px] bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-1 px-2 rounded flex items-center space-x-1">
@@ -151,8 +151,8 @@
                 </form>
             </div>
 
-            <div>
-                <div class="flex space-x-2 mb-2">
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <div class="flex space-x-2 mb-2 shrink-0">
                     <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-0.5 justify-between">
                         <button onclick="setRoutingMode('foot')" id="btn-mode-foot" class="px-3 flex justify-center py-1 bg-white dark:bg-gray-600 rounded-md shadow-sm text-blue-600 dark:text-blue-400 transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"></path></svg>
@@ -164,11 +164,11 @@
                     <button onclick="optimizeRouteLocalTSP()" id="tspOptimizeBtn" class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-lg shadow-sm text-xs active:scale-[0.98]">Optimizar</button>
                     <button onclick="invertirSentidoRutaCompleta()" class="flex-1 bg-purple-700 text-white font-bold py-2 rounded-lg shadow-sm text-xs active:scale-[0.98]">Invertir</button>
                 </div>
-                <div class="flex justify-between items-center mb-1">
+                <div class="flex justify-between items-center mb-1 shrink-0">
                     <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Secuencia Mostrada <span id="routeCountBadge" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1.5 py-0.5 rounded ml-1">0</span></span>
                     <button onclick="syncPendingCoordinates()" id="syncQueueBtn" class="hidden text-[10px] bg-amber-500 text-slate-950 font-bold px-2 py-1 rounded animate-pulse">Sincronizar</button>
                 </div>
-                <div id="liveRouteList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1"></div>
+                <div id="liveRouteList" class="space-y-1.5 overflow-y-auto pr-1 flex-1"></div>
             </div>
         </div>
 
@@ -189,7 +189,7 @@
             </div>
 
             <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Datos Offline</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Datos Offline (Polígonos Inc.)</label>
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-medium dark:text-gray-300">Calles y Plazas</span>
                     <span id="dbSizeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700">Vacío</span>
@@ -229,7 +229,7 @@
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-950 text-white text-[11px] font-mono py-2 rounded-lg flex items-center justify-center space-x-2">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span>Comprobar OTA (v8.3.0)</span>
+                        <span>Comprobar OTA (v8.4.0)</span>
                     </button>
                 </div>
             </div>
@@ -258,7 +258,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "8.3.0";
+        const APP_VERSION = "8.4.0";
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -369,7 +369,15 @@
             document.getElementById(`nav-${tabId}`).classList.add('active');
             const sheet = document.getElementById('bottom-sheet');
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            if (tabId === 'mapa') { sheet.style.height = '0px'; } else { sheet.style.height = '60dvh'; document.getElementById(`view-${tabId}`).classList.remove('hidden'); }
+            
+            // MEJORA 8.4.0: Ampliado el alto del panel deslizante a 85dvh para maximizar espacio de lista
+            if (tabId === 'mapa') { 
+                sheet.style.height = '0px'; 
+            } else { 
+                sheet.style.height = '85dvh'; 
+                document.getElementById(`view-${tabId}`).classList.remove('hidden'); 
+            }
+            
             setTimeout(() => { if(map) map.invalidateSize(); }, 350);
         }
 
