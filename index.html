@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AmailIA - Optimización de Reparto (v8.5.0)</title>
+    <title>AmailIA - Optimización de Reparto (v8.6.0)</title>
     
     <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icono.png">
@@ -27,23 +27,18 @@
             background-color: #1e3a8a; color: #ffffff; border: 2px solid #ffffff;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-size: 13px; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            transition: background-color 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         /* PALETA DE COLORES CATEGORÍAS */
-        .marker-notif-prio { background-color: #a855f7 !important; color: #ffffff !important; border-color: #ffffff !important; }
-        .marker-notif-norm { background-color: #0ea5e9 !important; color: #ffffff !important; border-color: #ffffff !important; }
-        .marker-paq-prio { background-color: #f97316 !important; color: #ffffff !important; border-color: #ffffff !important; }
-        .marker-paq-norm { background-color: #eab308 !important; color: #000000 !important; border-color: #ffffff !important; }
+        .marker-notif-prio { background-color: #a855f7 !important; color: #ffffff !important; }
+        .marker-notif-norm { background-color: #0ea5e9 !important; color: #ffffff !important; }
+        .marker-paq-prio { background-color: #f97316 !important; color: #ffffff !important; }
+        .marker-paq-norm { background-color: #eab308 !important; color: #000000 !important; }
         
-        .route-idx-marker.estado-entregado { background-color: #10b981 !important; color: #ffffff !important; opacity: 0.85; border-color: #ffffff !important; }
-        .route-idx-marker.estado-error { background-color: #ef4444 !important; color: #ffffff !important; border-color: #ffffff !important; }
-
-        .history-idx-marker {
-            background-color: #dc2626; color: #ffffff; border: 2px solid #ffffff;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-        }
+        /* BORDES DE ESTADO (PERÍMETROS) */
+        .borde-entregado { border: 3px solid #10b981 !important; }
+        .borde-error { border: 3px solid #ef4444 !important; }
 
         .map-picking-active { cursor: crosshair !important; }
         .nav-item { transition: all 0.2s ease; }
@@ -104,7 +99,7 @@
         </button>
     </div>
 
-    <!-- PANEL INFERIOR (Ajustado a 76dvh para respetar Dynamic Island) -->
+    <!-- PANEL INFERIOR -->
     <div id="bottom-sheet" class="bg-white dark:bg-gray-900 rounded-t-3xl shadow-[0_-15px_40px_rgba(0,0,0,0.15)] z-40 w-full flex flex-col border-t border-gray-200 dark:border-gray-800 h-[76dvh]">
         <div class="w-full flex justify-center pt-3 pb-2 shrink-0 cursor-pointer" onclick="switchTab('mapa')">
             <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
@@ -172,11 +167,11 @@
             </div>
         </div>
 
-        <div id="view-historial" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-4 hidden">
-            <button onclick="archiveCurrentJob()" class="w-full bg-emerald-600 text-white text-xs font-bold py-3 rounded-xl shadow mt-2">Archivar Jornada Actual</button>
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Histórico Guardado</label>
-                <div id="historyFilesContainer" class="space-y-2"></div>
+        <div id="view-historial" class="tab-content flex-1 overflow-y-auto px-4 pb-4 space-y-4 hidden flex flex-col">
+            <button onclick="archiveCurrentJob()" class="w-full bg-emerald-600 text-white text-xs font-bold py-3 rounded-xl shadow mt-2 shrink-0">Archivar Jornada Actual</button>
+            <div class="flex-1 overflow-hidden flex flex-col">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 shrink-0">Histórico Guardado</label>
+                <div id="historyFilesContainer" class="space-y-2 overflow-y-auto flex-1 pb-4"></div>
             </div>
         </div>
 
@@ -184,7 +179,7 @@
             <div class="mt-2">
                 <button onclick="ejecutarImpresionJornada()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md text-xs flex justify-center items-center space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.82l-.24 2.11A1.23 1.23 0 007.71 17.3h8.58a1.23 1.23 0 001.23-1.37l-.24-2.11M6.72 13.82a3.68 3.33 0 0110.56 0M6.72 13.82H4.47a1.23 1.23 0 00-1.23 1.23v2.45a1.23 1.23 0 001.23 1.23h1.23M17.28 13.82h2.25a1.23 1.23 0 011.23 1.23v2.45a1.23 1.23 0 01-1.23 1.23h-1.23M16.5 6.75H7.5v4.5h9v-4.5z" /></svg>
-                    <span>Imprimir Hoja de Ruta</span>
+                    <span>Imprimir Hoja de Ruta Actual</span>
                 </button>
             </div>
 
@@ -229,7 +224,7 @@
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <button onclick="checkUpdateOTA()" class="w-full bg-gray-900 dark:bg-gray-950 text-white text-[11px] font-mono py-2 rounded-lg flex items-center justify-center space-x-2">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span>Comprobar OTA (v8.5.0)</span>
+                        <span>Comprobar OTA (v8.6.0)</span>
                     </button>
                 </div>
             </div>
@@ -258,7 +253,7 @@
     <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="handleImportFile(event)">
 
     <script>
-        const APP_VERSION = "8.5.0";
+        const APP_VERSION = "8.6.0";
         const MUNICIPALITIES = {
             catarroja: { name: "Catarroja", cp: "46470", coords: [39.4031, -0.4024] },
             albal: { name: "Albal", cp: "46470", coords: [39.3958, -0.4154] },
@@ -281,15 +276,8 @@
         const bImg = document.getElementById('barriosImg');
         const bMod = document.getElementById('barriosModal');
         
-        function openBarrio(m) {
-            bImg.src = m + '.heic'; 
-            bMod.classList.remove('hidden'); bMod.classList.add('flex');
-            zS = 1; zPx = 0; zPy = 0; updateZ();
-        }
-        function closeBarrio() {
-            bMod.classList.add('hidden'); bMod.classList.remove('flex');
-            bImg.src = '';
-        }
+        function openBarrio(m) { bImg.src = m + '.heic'; bMod.classList.remove('hidden'); bMod.classList.add('flex'); zS = 1; zPx = 0; zPy = 0; updateZ(); }
+        function closeBarrio() { bMod.classList.add('hidden'); bMod.classList.remove('flex'); bImg.src = ''; }
         function updateZ() { bImg.style.transform = `translate(${zPx}px, ${zPy}px) scale(${zS})`; }
         
         const zC = document.getElementById('barriosZoomContainer');
@@ -302,18 +290,14 @@
             if(e.touches.length === 2) {
                 const cD = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
                 zS = Math.min(Math.max(1, zS * (cD / iD)), 6); iD = cD; updateZ();
-            } else if(e.touches.length === 1 && isP) {
-                zPx = e.touches[0].pageX - sX; zPy = e.touches[0].pageY - sY; updateZ();
-            }
+            } else if(e.touches.length === 1 && isP) { zPx = e.touches[0].pageX - sX; zPy = e.touches[0].pageY - sY; updateZ(); }
         }, {passive: false});
 
         function toggleMapLock() {
             isMapLocked = !isMapLocked;
             const btn = document.getElementById('btn-lock');
             btn.innerHTML = isMapLocked ? '🔒' : '🔓';
-            btn.className = isMapLocked
-                ? "w-8 h-8 mt-1 rounded-lg font-bold text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 shadow-sm transition-all border border-gray-300 dark:border-gray-600"
-                : "w-8 h-8 mt-1 rounded-lg font-bold text-sm bg-red-100 text-red-600 shadow-sm transition-all border border-red-300 animate-pulse";
+            btn.className = isMapLocked ? "w-8 h-8 mt-1 rounded-lg font-bold text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 shadow-sm transition-all border border-gray-300 dark:border-gray-600" : "w-8 h-8 mt-1 rounded-lg font-bold text-sm bg-red-100 text-red-600 shadow-sm transition-all border border-red-300 animate-pulse";
             renderActiveRoute(); 
         }
 
@@ -350,8 +334,7 @@
         }
 
         function setRoutingMode(mode) {
-            routingMode = mode;
-            localStorage.setItem('amailia_routing_mode', mode);
+            routingMode = mode; localStorage.setItem('amailia_routing_mode', mode);
             if(mode === 'foot') {
                 document.getElementById('btn-mode-foot').className = "px-3 flex justify-center py-1 bg-white dark:bg-gray-600 rounded-md shadow-sm text-blue-600 dark:text-blue-400 transition-all";
                 document.getElementById('btn-mode-car').className = "px-3 flex justify-center py-1 text-gray-500 dark:text-gray-400 rounded-md transition-all";
@@ -367,14 +350,7 @@
             document.getElementById(`nav-${tabId}`).classList.add('active');
             const sheet = document.getElementById('bottom-sheet');
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            
-            if (tabId === 'mapa') { 
-                sheet.style.height = '0px'; 
-            } else { 
-                sheet.style.height = '76dvh'; 
-                document.getElementById(`view-${tabId}`).classList.remove('hidden'); 
-            }
-            
+            if (tabId === 'mapa') { sheet.style.height = '0px'; } else { sheet.style.height = '76dvh'; document.getElementById(`view-${tabId}`).classList.remove('hidden'); }
             setTimeout(() => { if(map) map.invalidateSize(); }, 350);
         }
 
@@ -429,7 +405,6 @@
                 `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(portalNum + ' ' + streetName)}&city=${encodeURIComponent(mName)}&county=Valencia&country=España&addressdetails=1&limit=5`,
                 `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetName + ' ' + portalNum + ', ' + mName + ', Valencia')}&addressdetails=1&limit=5`
             ];
-
             for (let url of searchUrls) {
                 try {
                     const res = await fetch(url, { headers: { 'User-Agent': 'AmailIA-Logistics-App' } });
@@ -438,9 +413,7 @@
                         for (let item of data) {
                             if (item.address) {
                                 const town = item.address.town || item.address.city || item.address.village || item.address.municipality || "";
-                                if (town.toLowerCase() === mName.toLowerCase()) {
-                                    return [parseFloat(item.lat), parseFloat(item.lon)];
-                                }
+                                if (town.toLowerCase() === mName.toLowerCase()) return [parseFloat(item.lat), parseFloat(item.lon)];
                             }
                         }
                     }
@@ -457,28 +430,14 @@
             for (let portalToken of portalesLote) {
                 const portalNum = parseInt(portalToken, 10); if (isNaN(portalNum)) continue;
                 let geoPoint = null; let isPendingSync = false;
+                if (customCoordsRaw) { geoPoint = JSON.parse(customCoordsRaw); } 
+                else if (navigator.onLine) { geoPoint = await geocodeStrict(streetName, portalNum, currentMunicipality); }
                 
-                if (customCoordsRaw) { 
-                    geoPoint = JSON.parse(customCoordsRaw); 
-                } else if (navigator.onLine) {
-                    geoPoint = await geocodeStrict(streetName, portalNum, currentMunicipality);
-                }
-                
-                if (!geoPoint) { 
-                    isPendingSync = true; 
-                    geoPoint = [...MUNICIPALITIES[currentMunicipality].coords]; 
-                }
+                if (!geoPoint) { isPendingSync = true; geoPoint = [...MUNICIPALITIES[currentMunicipality].coords]; }
                 
                 activeRouteData.push({ 
-                    id: Date.now() + Math.random(), 
-                    municipality: currentMunicipality, 
-                    street: streetName, 
-                    portal: portalNum, 
-                    coords: geoPoint, 
-                    pendingSync: isPendingSync, 
-                    estado: 'pendiente',
-                    tipo: currentTipoIngreso,
-                    prioridad: currentPrioridadIngreso 
+                    id: Date.now() + Math.random(), municipality: currentMunicipality, street: streetName, portal: portalNum, 
+                    coords: geoPoint, pendingSync: isPendingSync, estado: 'pendiente', tipo: currentTipoIngreso, prioridad: currentPrioridadIngreso 
                 });
             }
             saveStateToLocalStorage(); renderActiveRoute(); document.getElementById("routeForm").reset(); document.getElementById("customCoordsInput").value = ""; submitBtn.disabled = false; syncPendingCoordinates();
@@ -494,16 +453,11 @@
             const listContainer = document.getElementById("liveRouteList"); listContainer.innerHTML = "";
             
             if (activeRouteData.length === 0) { 
-                document.getElementById("routeCountBadge").textContent = 0;
-                listContainer.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-2">Ruta vacía.</p>`; 
-                document.getElementById("syncQueueBtn").classList.add("hidden"); 
-                return; 
+                document.getElementById("routeCountBadge").textContent = 0; listContainer.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-2">Ruta vacía.</p>`; 
+                document.getElementById("syncQueueBtn").classList.add("hidden"); return; 
             }
 
-            const polylinePoints = []; 
-            let pendingSyncCount = 0; 
-            let visibleCount = 0;
-            const coordinateCounts = {}; 
+            const polylinePoints = []; let pendingSyncCount = 0; let visibleCount = 0; const coordinateCounts = {}; 
 
             activeRouteData.forEach((segment, index) => {
                 const step = index + 1;
@@ -516,19 +470,12 @@
                 visibleCount++;
                 let renderCoords = [...segment.coords];
 
-                if (segment.pendingSync) {
-                    pendingSyncCount++;
-                } else {
+                if (segment.pendingSync) { pendingSyncCount++; } else {
                     const coordKey = `${segment.coords[0]},${segment.coords[1]}`;
                     if (!coordinateCounts[coordKey]) coordinateCounts[coordKey] = 0;
                     const offsetCount = coordinateCounts[coordKey];
                     coordinateCounts[coordKey]++;
-
-                    if (offsetCount > 0) {
-                        const shift = 0.0001; 
-                        renderCoords[0] += (offsetCount * shift * 0.5); 
-                        renderCoords[1] += (offsetCount * shift); 
-                    }
+                    if (offsetCount > 0) { const shift = 0.0001; renderCoords[0] += (offsetCount * shift * 0.5); renderCoords[1] += (offsetCount * shift); }
                     polylinePoints.push(renderCoords);
                 }
 
@@ -538,33 +485,28 @@
                 if (tipoReal === 'paquete' && prioReal === 'prioritario') estadoClassMarker = 'marker-paq-prio';
                 if (tipoReal === 'paquete' && prioReal === 'normal') estadoClassMarker = 'marker-paq-norm';
 
+                let borderClass = '';
                 let estadoIconLista = '';
-                if (segment.estado === 'entregado') { estadoClassMarker = 'estado-entregado'; estadoIconLista = '<span class="text-green-500 font-bold ml-1">✓</span>'; } 
-                else if (segment.estado === 'error') { estadoClassMarker = 'estado-error'; estadoIconLista = '<span class="text-red-500 font-bold ml-1">✗</span>'; }
+                if (segment.estado === 'entregado') { borderClass = 'borde-entregado'; estadoIconLista = '<span class="text-green-500 font-bold ml-1">✓</span>'; } 
+                else if (segment.estado === 'error') { borderClass = 'borde-error'; estadoIconLista = '<span class="text-red-500 font-bold ml-1">✗</span>'; }
 
-                let colorTextoMarcador = (tipoReal === 'paquete' && prioReal === 'normal' && segment.estado !== 'entregado' && segment.estado !== 'error') ? '#000000' : '#ffffff';
+                let colorTextoMarcador = (tipoReal === 'paquete' && prioReal === 'normal') ? '#000000' : '#ffffff';
 
                 if (!segment.pendingSync) {
-                    const customIcon = L.divIcon({ className: `route-idx-marker ${estadoClassMarker}`, html: `<span style="color:${colorTextoMarcador};">${step}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] });
+                    const customIcon = L.divIcon({ className: `route-idx-marker ${estadoClassMarker} ${borderClass}`, html: `<span style="color:${colorTextoMarcador};">${step}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] });
                     const popupContent = `<div style="font-family: sans-serif; text-align: center;"><b>Tramo #${step}</b><br>${segment.street}, Nº${segment.portal}<div style="margin-top: 8px; display: flex; gap: 4px; justify-content: center;"><a href="http://maps.apple.com/?daddr=${segment.coords[0]},${segment.coords[1]}" target="_blank" style="flex: 1; background: #333; color: white; text-decoration: none; padding: 5px 0; border-radius: 4px; font-size: 11px; font-weight: bold;">🍏 Apple</a><a href="https://www.google.com/maps/dir/?api=1&destination=${segment.coords[0]},${segment.coords[1]}" target="_blank" style="flex: 1; background: #4285F4; color: white; text-decoration: none; padding: 5px 0; border-radius: 4px; font-size: 11px; font-weight: bold;">🗺️ Google</a></div><div style="margin-top: 4px; display: flex; gap: 4px; justify-content: center;"><button onclick="cambiarEstadoTramo(${segment.id}, 'entregado')" style="flex: 1; background: #10b981; color: white; border: none; padding: 5px 0; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">✓ Entregar</button><button onclick="cambiarEstadoTramo(${segment.id}, 'error')" style="flex: 1; background: #ef4444; color: white; border: none; padding: 5px 0; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">✗ Error</button></div></div>`;
-                    
                     const marker = L.marker(renderCoords, { icon: customIcon, draggable: !isMapLocked }).bindPopup(popupContent);
-                    marker.on('dragend', function(e) {
-                        const newPos = e.target.getLatLng();
-                        segment.coords = [newPos.lat, newPos.lng];
-                        saveStateToLocalStorage(); renderActiveRoute();
-                    });
+                    marker.on('dragend', function(e) { const newPos = e.target.getLatLng(); segment.coords = [newPos.lat, newPos.lng]; saveStateToLocalStorage(); renderActiveRoute(); });
                     marker.addTo(routeMarkersGroup);
                 }
 
                 let borderLeftClass = segment.pendingSync ? 'border-amber-500' : '';
-                if (!segment.pendingSync) {
+                if (!segment.pendingSync && !borderClass) {
                     if (tipoReal === 'notificacion' && prioReal === 'prioritario') borderLeftClass = 'border-purple-600';
                     if (tipoReal === 'notificacion' && prioReal === 'normal') borderLeftClass = 'border-sky-500';
                     if (tipoReal === 'paquete' && prioReal === 'prioritario') borderLeftClass = 'border-orange-500';
                     if (tipoReal === 'paquete' && prioReal === 'normal') borderLeftClass = 'border-yellow-500';
                 }
-
                 if (segment.estado === 'entregado') borderLeftClass = 'border-green-500 opacity-60';
                 if (segment.estado === 'error') borderLeftClass = 'border-red-500';
 
@@ -579,14 +521,7 @@
             document.getElementById("routeCountBadge").textContent = visibleCount;
             const syncBtn = document.getElementById("syncQueueBtn");
             if (pendingSyncCount > 0) { syncBtn.classList.remove("hidden"); syncBtn.textContent = `Sync (${pendingSyncCount})`; } else { syncBtn.classList.add("hidden"); }
-            
-            if (polylinePoints.length > 1) {
-                const polyline = L.polyline(polylinePoints, {
-                    color: routingMode === 'car' ? '#8b5cf6' : '#1e3a8a', 
-                    weight: 4, opacity: 0.85, dashArray: '6, 10', lineJoin: 'round'
-                });
-                polyline.addTo(routeLinesGroup);
-            }
+            if (polylinePoints.length > 1) { L.polyline(polylinePoints, { color: routingMode === 'car' ? '#8b5cf6' : '#1e3a8a', weight: 4, opacity: 0.85, dashArray: '6, 10', lineJoin: 'round' }).addTo(routeLinesGroup); }
         }
 
         function solicitarCambioPosicionDirecto(indexActual) {
@@ -602,11 +537,7 @@
             for (let segment of activeRouteData) {
                 if (segment.pendingSync) {
                     const pt = await geocodeStrict(segment.street, segment.portal, segment.municipality);
-                    if (pt) { 
-                        segment.coords = pt; 
-                        segment.pendingSync = false; 
-                        changed = true; 
-                    }
+                    if (pt) { segment.coords = pt; segment.pendingSync = false; changed = true; }
                 }
             }
             if (changed) { saveStateToLocalStorage(); renderActiveRoute(); }
@@ -626,13 +557,7 @@
             const valid = activeRouteData.filter(s => !s.pendingSync);
             if (valid.length < 2) return alert("Introduce 2 tramos sincronizados.");
             let callesMap = {}; 
-            
-            valid.forEach(t => { 
-                let key = t.street.trim().toLowerCase(); 
-                if (!callesMap[key]) callesMap[key] = []; 
-                callesMap[key].push(t); 
-            });
-
+            valid.forEach(t => { let key = t.street.trim().toLowerCase(); if (!callesMap[key]) callesMap[key] = []; callesMap[key].push(t); });
             for (let c in callesMap) callesMap[c].sort((a, b) => a.portal - b.portal);
             let restantes = Object.keys(callesMap); let ruta = [];
             let key = restantes.shift(); let lista = callesMap[key]; ruta = ruta.concat(lista);
@@ -648,22 +573,21 @@
                     if (dFin < minD) { minD = dFin; idx = i; normal = false; }
                 }
                 let kProx = restantes.splice(idx, 1)[0]; let blq = callesMap[kProx];
-                if (!normal) blq.reverse();
-                ruta = ruta.concat(blq); ult = blq[blq.length - 1];
+                if (!normal) blq.reverse(); ruta = ruta.concat(blq); ult = blq[blq.length - 1];
             }
-
             activeRouteData = [...ruta, ...activeRouteData.filter(s => s.pendingSync)];
             saveStateToLocalStorage(); renderActiveRoute(); map.fitBounds(ruta.map(s => s.coords), { padding: [40, 40] }); switchTab('mapa');
         }
 
+        /* --- MEJORA 8.6.0: HISTORIAL AVANZADO --- */
         function archiveCurrentJob() {
             if (activeRouteData.length === 0) return alert("Sin datos.");
             let h = JSON.parse(localStorage.getItem("amailia_history") || "[]");
             h.push({ date: new Date().toISOString(), data: activeRouteData });
             localStorage.setItem("amailia_history", JSON.stringify(h));
-            activeRouteData = []; saveStateToLocalStorage(); renderActiveRoute(); renderHistoryFileList();
-            alert("Guardado.");
+            activeRouteData = []; saveStateToLocalStorage(); renderActiveRoute(); renderHistoryFileList(); alert("Guardado.");
         }
+
         function renderHistoryFileList() {
             const container = document.getElementById("historyFilesContainer"); container.innerHTML = "";
             const h = JSON.parse(localStorage.getItem("amailia_history") || "[]");
@@ -671,18 +595,84 @@
             h.slice().reverse().forEach((job, revIdx) => {
                 const idx = h.length - 1 - revIdx; const d = new Date(job.date);
                 const div = document.createElement("div"); div.className = "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700";
-                div.innerHTML = `<div class="text-xs cursor-pointer flex-1" onclick="viewHistoryOnMap(${idx})"><p class="font-bold dark:text-white">📅 ${d.toLocaleDateString()}</p><p class="text-[10px] text-gray-500">${job.data.length} tramos • ${d.toLocaleTimeString()}</p></div><button onclick="deleteHistoryJob(${idx})" class="text-red-400 px-2">x</button>`;
+                div.innerHTML = `
+                    <div class="text-xs cursor-pointer flex-1" onclick="viewHistoryOnMap(${idx})">
+                        <p class="font-bold dark:text-white">📅 ${d.toLocaleDateString()} <span class="text-gray-400 font-normal ml-1">${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></p>
+                        <p class="text-[10px] text-gray-500 mt-0.5">${job.data.length} tramos (Toca para Mapa)</p>
+                    </div>
+                    <div class="flex items-center space-x-3 px-1 text-base">
+                        <button onclick="ejecutarImpresionHistorial(${idx})" aria-label="Imprimir">🖨️</button>
+                        <button onclick="editarFechaHistorial(${idx})" aria-label="Editar">✏️</button>
+                        <button onclick="deleteHistoryJob(${idx})" aria-label="Borrar">❌</button>
+                    </div>`;
                 container.appendChild(div);
             });
         }
+
+        window.editarFechaHistorial = function(idx) {
+            const h = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            const job = h[idx]; const d = new Date(job.date);
+            const pad = (n) => n.toString().padStart(2, '0');
+            const currentStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            const newStr = prompt("Modifica la fecha y hora (Formato YYYY-MM-DD HH:MM):", currentStr);
+            if(newStr) {
+                const parsed = new Date(newStr.replace(' ', 'T'));
+                if(!isNaN(parsed.getTime())) { h[idx].date = parsed.toISOString(); localStorage.setItem("amailia_history", JSON.stringify(h)); renderHistoryFileList(); } 
+                else { alert("Formato inválido. Usa YYYY-MM-DD HH:MM"); }
+            }
+        };
+
+        window.ejecutarImpresionHistorial = function(idx) {
+            const h = JSON.parse(localStorage.getItem("amailia_history") || "[]");
+            const job = h[idx];
+            if (!job || job.data.length === 0) return alert("Sin datos.");
+            document.getElementById("printMetaLabel").textContent = `Ruta Archivada: ${new Date(job.date).toLocaleString('es-ES')} | Tramos: ${job.data.length}`;
+            const tbody = document.getElementById("printTableBody"); tbody.innerHTML = "";
+            job.data.forEach((s, i) => {
+                let tipoIcon = s.tipo === 'paquete' ? '📦' : '✉️';
+                let prioIcon = s.prioridad === 'prioritario' ? '⚡ ' : '⏳ ';
+                let estadoTxt = '';
+                if(s.estado === 'entregado') estadoTxt = '✅';
+                if(s.estado === 'error') estadoTxt = '❌';
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td style="text-align: center; font-weight: bold;">${i + 1}</td><td>${MUNICIPALITIES[s.municipality].name}</td><td style="font-weight: bold;">${tipoIcon}${prioIcon}${s.street}</td><td style="text-align: center; font-weight: bold;">${s.portal}</td><td style="text-align: center;">${estadoTxt}</td>`;
+                tbody.appendChild(tr);
+            });
+            setTimeout(() => window.print(), 350);
+        };
+
         function viewHistoryOnMap(index) {
             const job = JSON.parse(localStorage.getItem("amailia_history"))[index]; if(!job) return;
             switchTab('mapa'); historyLayersGroup.clearLayers();
             map.removeLayer(routeMarkersGroup); map.removeLayer(routeLinesGroup);
-            let pts = [];
+            let pts = []; const coordinateCounts = {}; 
+
             job.data.filter(s=>s.coords).forEach((s, i) => {
-                pts.push(s.coords);
-                L.marker(s.coords, { icon: L.divIcon({ className: 'history-idx-marker', html: `<span>${i+1}</span>`, iconSize: [26, 26] }) }).addTo(historyLayersGroup);
+                const step = i + 1;
+                const tipoReal = s.tipo || 'notificacion';
+                const prioReal = s.prioridad || 'prioritario';
+                
+                let renderCoords = [...s.coords];
+                const coordKey = `${s.coords[0]},${s.coords[1]}`;
+                if (!coordinateCounts[coordKey]) coordinateCounts[coordKey] = 0;
+                const offsetCount = coordinateCounts[coordKey];
+                coordinateCounts[coordKey]++;
+                if (offsetCount > 0) { const shift = 0.0001; renderCoords[0] += (offsetCount * shift * 0.5); renderCoords[1] += (offsetCount * shift); }
+                pts.push(renderCoords);
+
+                let estadoClassMarker = ''; 
+                if (tipoReal === 'notificacion' && prioReal === 'prioritario') estadoClassMarker = 'marker-notif-prio';
+                if (tipoReal === 'notificacion' && prioReal === 'normal') estadoClassMarker = 'marker-notif-norm';
+                if (tipoReal === 'paquete' && prioReal === 'prioritario') estadoClassMarker = 'marker-paq-prio';
+                if (tipoReal === 'paquete' && prioReal === 'normal') estadoClassMarker = 'marker-paq-norm';
+
+                let borderClass = '';
+                if (s.estado === 'entregado') borderClass = 'borde-entregado';
+                else if (s.estado === 'error') borderClass = 'borde-error';
+
+                let colorTextoMarcador = (tipoReal === 'paquete' && prioReal === 'normal') ? '#000000' : '#ffffff';
+
+                L.marker(renderCoords, { icon: L.divIcon({ className: `route-idx-marker ${estadoClassMarker} ${borderClass}`, html: `<span style="color:${colorTextoMarcador};">${step}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] }) }).addTo(historyLayersGroup);
             });
             if(pts.length>1) L.polyline(pts, {color: '#dc2626', weight:4, dashArray: '6, 8'}).addTo(historyLayersGroup);
             if(pts.length>0) map.fitBounds(L.polyline(pts).getBounds(), {padding:[50,50]});
@@ -714,9 +704,7 @@
             try {
                 const cache = await caches.open('amailia-maptiles');
                 for (let i = 0; i < urls.length; i += 10) {
-                    await Promise.all(urls.slice(i, i+10).map(async u => {
-                        try { const res = await fetch(u, {mode:'cors'}); if(res.ok) await cache.put(u, res); } catch(e){} c++;
-                    }));
+                    await Promise.all(urls.slice(i, i+10).map(async u => { try { const res = await fetch(u, {mode:'cors'}); if(res.ok) await cache.put(u, res); } catch(e){} c++; }));
                     btn.innerText = `${c}/${urls.length}`;
                 }
                 btn.innerText = "¡Listo!"; setTimeout(() => btn.innerText = orig, 3000);
@@ -730,10 +718,7 @@
                 const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
                 const data = await res.json(); const vias = new Set();
                 data.elements.forEach(el => { 
-                    if (el.tags) {
-                        if (el.tags.name) vias.add(el.tags.name.trim());
-                        else if (el.tags.ref) vias.add(el.tags.ref.trim());
-                    }
+                    if (el.tags) { if (el.tags.name) vias.add(el.tags.name.trim()); else if (el.tags.ref) vias.add(el.tags.ref.trim()); }
                 });
                 localStorage.setItem(`amailia_db_vias_${currentMunicipality}`, JSON.stringify(Array.from(vias).sort()));
                 updateCallejeroStatusUI(); alert("Calles guardadas estrictamente para " + MUNICIPALITIES[currentMunicipality].name);
@@ -751,7 +736,6 @@
         document.getElementById("streetInput").addEventListener("input", (e) => {
             const q = e.target.value.toLowerCase(); const list = document.getElementById("autocompleteList");
             if(q.length < 3) return list.classList.add("hidden");
-            
             const data = localStorage.getItem(`amailia_db_vias_${currentMunicipality}`); 
             if(data) {
                 const calles = JSON.parse(data).filter(c => c.toLowerCase().includes(q)).slice(0, 6);
@@ -789,10 +773,7 @@
             if (navigator.share && navigator.canShare) {
                 try {
                     const file = new File([backupData], fileName, { type: "application/json" });
-                    if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: 'Backup AmailIA', text: 'Copia de seguridad de rutas y paquetería' });
-                        return;
-                    }
+                    if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Backup AmailIA', text: 'Copia de seguridad de rutas y paquetería' }); return; }
                 } catch (err) {}
             }
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(backupData);
